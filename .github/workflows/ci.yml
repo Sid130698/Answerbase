@@ -1,0 +1,85 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.paths.outputs.backend }}
+      frontend: ${{ steps.paths.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PYTHON'
+          import os, subprocess
+          base = os.environ.get('BASE_SHA', '')
+          head = os.environ['HEAD_SHA']
+          if not base or set(base) == {'0'}:
+              files = subprocess.check_output(['git', 'ls-files'], text=True).splitlines()
+          else:
+              files = subprocess.check_output(['git', 'diff', '--name-only', base, head], text=True).splitlines()
+          shared = any(p.startswith(('.github/', 'infra/')) or p in ('compose.yml', '.dockerignore', 'Makefile') for p in files)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              for component in ('backend', 'frontend'):
+                  changed = shared or any(p.startswith(component + '/') for p in files)
+                  if component == 'frontend' and '.nvmrc' in files:
+                      changed = True
+                  out.write(f'{component}={str(changed).lower()}\n')
+          PYTHON
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: answerbase
+          POSTGRES_USER: answerbase
+          POSTGRES_PASSWORD: answerbase-local
+        ports: [55432:5432]
+        options: >-
+          --health-cmd "pg_isready -U answerbase -d answerbase"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: 'backend/**/pom.xml'
+      - name: Verify modules, migrations, and closed access boundary
+        working-directory: backend
+        run: ./mvnw -B verify
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      - working-directory: frontend
+        run: npm run lint && npm run build

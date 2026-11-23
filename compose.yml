@@ -1,0 +1,69 @@
+name: answerbase
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-answerbase}
+      POSTGRES_USER: ${POSTGRES_USER:-answerbase}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-answerbase-local}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+      target: api
+    environment: &database-environment
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-answerbase}
+      DATABASE_USERNAME: ${POSTGRES_USER:-answerbase}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-answerbase-local}
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+      target: worker
+    environment: *database-environment
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+    # Management port is internal only. No public worker ingress.
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  postgres-data:
