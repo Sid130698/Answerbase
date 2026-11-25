@@ -1,0 +1,114 @@
+.query-admin {
+  max-width: 1200px;
+  padding: 0;
+  margin: auto;
+  min-width: 0;
+}
+.query-admin h1 {
+  font-size: 32px;
+}
+.query-admin h2 {
+  margin-top: 32px;
+  font-size: 22px;
+}
+.usage-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  padding: 24px 0;
+  border-block: 1px solid var(--border);
+}
+.usage-summary dt {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.usage-summary dd {
+  margin: 8px 0 0;
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+}
+.query-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 24px 0;
+}
+.query-actions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.query-table {
+  overflow-x: auto;
+}
+.query-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.query-table caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 16px;
+}
+.query-table th,
+.query-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.query-table td:first-child {
+  min-width: 240px;
+  max-width: 480px;
+}
+.query-table button,
+.query-detail {
+  overflow-wrap: anywhere;
+}
+.query-detail {
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+  padding-top: 24px;
+}
+.query-detail form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.query-detail textarea {
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.query-detail blockquote {
+  margin: 16px 0;
+  padding: 0 16px;
+  border-left: 3px solid var(--border);
+}
+.query-detail summary {
+  min-height: 44px;
+  cursor: pointer;
+}
+.query-detail dl > div {
+  display: flex;
+  gap: 24px;
+}
+.query-detail dd {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .query-admin {
+    padding: 0;
+  }
+  .usage-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .usage-summary dd {
+    font-size: 18px;
+  }
+}

@@ -12,9 +12,9 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | Document authorization | Named groups, document restrictions, pre-ranking SQL filtering, staff parity | Implemented: shared database access predicate, groups/admin UI; 17 tests pass. Retrieval integration follows in next slice. |
 | Retrieval | Embedding interface, pgvector + FTS, RRF, reranker interface, configurable variants | Implemented; 17 tests pass; live local embedding + cross-encoder smoke passed; scale/ablation benchmarks pending |
 | Answers | Hosted provider, streaming, grounded claims, citation/quote verification + retry/fallback, history | Implemented locally; 18 tests pass and live local answer/abstention smoke passes. Hosted verification, quality evaluation and latency targets remain pending. |
-| Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Implemented; browser verified citation → version → highlighted full text and saved feedback. Mobile recheck pending (viewport override did not apply). |
-| Customer administration | Invitations/approval, workspace members/groups, settings, query log, weekly costs | Pending |
-| Feedback | Votes/reasons, unanswered CSV, corrected-answer evaluation queue | Pending |
+| Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Implemented; browser verified citation → version → highlighted full text and saved feedback. 390px Ask layout subsequently verified in admin slice. |
+| Customer administration | Invitations/approval, workspace members/groups, settings, query log, weekly costs | Query log, weekly usage/cost and group UI implemented; invitations, member UI and settings pending |
+| Feedback | Votes/reasons, unanswered CSV, corrected-answer evaluation queue | Implemented; 19 backend tests, frontend lint/build pass; browser verified filtering/candidate save and 390px admin/Ask layout |
 | Lifecycle/connector | Retention, full deletion, orphan reconciliation, Notion-export folder sync | Pending |
 | Security/operations | Rate limits, PII redaction, traces, alerts, provider failures, budgets | Pending |
 | Evaluation | 60 gold questions + 10 adversarial cases, real metric reports, ablations, CI regression gate | Pending; human-written/reviewed gold and 20% grading spot-check require owner participation |

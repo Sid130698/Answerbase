@@ -903,6 +903,34 @@ class AuthenticationTests {
                                     questionService.read(
                                             UUID.fromString(owner), workspace, answer.id()))
                     .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            var queryAdmin = new QueryAdminService(jdbc, workspaceService);
+            assertThatThrownBy(() -> queryAdmin.list(UUID.fromString(viewer), workspace, 0, false))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            assertThatThrownBy(
+                            () ->
+                                    queryAdmin.detail(
+                                            UUID.fromString(outsider), workspace, answer.id()))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            assertThat(queryAdmin.list(UUID.fromString(owner), workspace, 0, false)).hasSize(1);
+            assertThat(
+                            ((Number)
+                                            queryAdmin
+                                                    .usage(UUID.fromString(owner), workspace)
+                                                    .get("completed"))
+                                    .intValue())
+                    .isEqualTo(1);
+            queryAdmin.correct(
+                    UUID.fromString(owner),
+                    workspace,
+                    answer.id(),
+                    "Refunds within 30 days. See refund policy.");
+            assertThat(
+                            queryAdmin
+                                    .detail(UUID.fromString(owner), workspace, answer.id())
+                                    .get("corrected_answer"))
+                    .isEqualTo("Refunds within 30 days. See refund policy.");
+            assertThat(queryAdmin.unanswered(UUID.fromString(owner), workspace))
+                    .isEqualTo("question,status,created_at\r\n");
             var group = documentAccess.create(UUID.fromString(owner), workspace, "HR");
             documentAccess.policy(
                     UUID.fromString(owner),
