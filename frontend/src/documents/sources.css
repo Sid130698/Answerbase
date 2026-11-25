@@ -19,3 +19,12 @@
 
 .sources-page .text-link { background: transparent; border: 0; padding: 8px 0; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; }
 .source-upload input::file-selector-button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.document-permissions { padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.document-permissions summary { cursor: pointer; min-height: 44px; padding-block: 12px; }
+.document-permissions label, .group-member { display: flex; align-items: center; gap: 12px; min-height: 44px; overflow-wrap: anywhere; }
+.document-permissions input, .group-member input { width: 20px; height: 20px; flex-shrink: 0; }
+fieldset { border: 1px solid var(--border); margin: 16px 0; padding: 16px; }
+.access-create { display: grid; grid-template-columns: minmax(180px, 360px) auto; align-items: end; gap: 8px 16px; margin-block: 24px; width: fit-content; max-width: 100%; }
+.access-create label { grid-column: 1 / -1; font-weight: 500; }
+.access-create input { min-height: 44px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); font: inherit; }
+@media(max-width: 600px) { .access-create { grid-template-columns: 1fr; width: 100%; }.access-create button { justify-self: start; } }

@@ -9,7 +9,7 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | Foundation | Auth, org isolation, workspace membership, separate staff support | Implemented, PR #1 merged |
 | Original ingestion | Private originals, PDF/TXT/MD, versions, queue, retries, source preview | PR #2 open; 14 tests locally; desktop/mobile upload verified |
 | Complete ingestion | DOCX/HTML, structure/offsets, batch/drop uploads, unchanged-content dedupe, duplicate signals | Implemented on feature/prd-ingestion; 17 tests pass, frontend lint/build pass; desktop/390px batch upload and processing verified |
-| Document authorization | Named groups, document restrictions, pre-ranking SQL filtering, staff parity | Pending |
+| Document authorization | Named groups, document restrictions, pre-ranking SQL filtering, staff parity | Implemented: shared database access predicate, groups/admin UI; 17 tests pass. Retrieval integration follows in next slice. |
 | Retrieval | Embedding interface, pgvector + FTS, RRF, reranker interface, configurable variants | Pending |
 | Answers | Hosted provider, streaming, grounded claims, citation/quote verification + retry/fallback, history | Pending |
 | Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Pending |
@@ -22,3 +22,5 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | External proof | Public URL with two workspaces, demo video, write-up, five external testers/three quotes, pilot follow-up | External evidence required; do not fabricate testers, quotes, live results or deployment |
 
 Quality targets: hit@5 >=90%; correctness >=85%; citation accuracy >=95%; unanswerable abstention >=90%; false abstention <10%; p50 <4s / p95 <8s complete answer, first stream <1.5s; cost <$0.03/answered query. Report actual misses openly. Hosting and live provider verification depend on supplied accounts; no paid services without explicit budget.
+
+Owner update: no hosted accounts yet. Prepare and verify local setup first; hosted deployment/live Groq results remain pending.

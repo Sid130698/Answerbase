@@ -58,6 +58,15 @@ class DocumentService {
         return w;
     }
 
+    void requireDocument(UUID user, UUID workspace, UUID document) {
+        if (jdbc.queryForList(
+                        "SELECT id FROM answerbase.documents WHERE id=? AND workspace_id=? AND answerbase.can_read_document(?,id)",
+                        document,
+                        workspace,
+                        user)
+                .isEmpty()) throw missing();
+    }
+
     private Version map(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new Version(
                 rs.getObject("id", UUID.class),
@@ -79,7 +88,7 @@ class DocumentService {
               (SELECT p.id FROM answerbase.document_versions p WHERE p.document_id=d.id AND p.status='processed' ORDER BY p.version_number DESC LIMIT 1) AS processed
             FROM answerbase.documents d
             JOIN LATERAL (SELECT * FROM answerbase.document_versions WHERE document_id=d.id ORDER BY version_number DESC LIMIT 1) v ON true
-            WHERE d.organization_id=? AND d.workspace_id=? ORDER BY d.created_at DESC,d.id
+            WHERE d.organization_id=? AND d.workspace_id=? AND answerbase.can_read_document(?,d.id) ORDER BY d.created_at DESC,d.id
             """,
                 (rs, n) ->
                         new Document(
@@ -88,7 +97,8 @@ class DocumentService {
                                 map(rs),
                                 rs.getObject("processed", UUID.class)),
                 w.organizationId(),
-                workspace);
+                workspace,
+                user);
     }
 
     record Duplicate(
@@ -103,9 +113,10 @@ class DocumentService {
         var w = access(user, workspace, true);
         var rows =
                 jdbc.queryForList(
-                        "SELECT d.id,d.title,v.checksum,v.extracted_text FROM answerbase.documents d JOIN LATERAL (SELECT checksum,extracted_text FROM answerbase.document_versions WHERE document_id=d.id ORDER BY version_number DESC LIMIT 1) v ON true WHERE d.organization_id=? AND d.workspace_id=? ORDER BY d.id LIMIT 2000",
+                        "SELECT d.id,d.title,v.checksum,v.extracted_text FROM answerbase.documents d JOIN LATERAL (SELECT checksum,extracted_text FROM answerbase.document_versions WHERE document_id=d.id ORDER BY version_number DESC LIMIT 1) v ON true WHERE d.organization_id=? AND d.workspace_id=? AND answerbase.can_read_document(?,d.id) ORDER BY d.id LIMIT 2000",
                         w.organizationId(),
-                        workspace);
+                        workspace,
+                        user);
         var tokens =
                 rows.stream()
                         .map(
@@ -150,6 +161,7 @@ class DocumentService {
 
     List<Version> versions(UUID user, UUID workspace, UUID document) {
         var w = access(user, workspace, false);
+        requireDocument(user, workspace, document);
         if (jdbc.queryForList(
                         "SELECT id FROM answerbase.documents WHERE id=? AND organization_id=? AND workspace_id=?",
                         document,
@@ -167,6 +179,7 @@ class DocumentService {
     private Map<String, Object> version(
             UUID user, UUID workspace, UUID document, UUID version, boolean write) {
         var w = access(user, workspace, write);
+        requireDocument(user, workspace, document);
         var rows =
                 jdbc.queryForList(
                         "SELECT * FROM answerbase.document_versions WHERE id=? AND document_id=? AND organization_id=? AND workspace_id=?",
@@ -193,6 +206,7 @@ class DocumentService {
         var w = access(user, workspace, true);
         jdbc.queryForList("SELECT id FROM answerbase.workspaces WHERE id=? FOR UPDATE", workspace);
         access(user, workspace, true);
+        if (document != null) requireDocument(user, workspace, document);
         String filename = rawFilename == null ? "" : rawFilename.strip();
         if (filename.isEmpty()
                 || filename.length() > 200
