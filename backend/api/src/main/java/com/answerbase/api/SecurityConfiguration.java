@@ -120,6 +120,10 @@ class SecurityConfiguration {
                                     .authenticated();
                             requests.requestMatchers(HttpMethod.POST, "/api/v1/workspaces/*/search")
                                     .authenticated();
+                            requests.requestMatchers(
+                                            "/api/v1/workspaces/*/questions",
+                                            "/api/v1/workspaces/*/questions/**")
+                                    .authenticated();
                             requests.requestMatchers("/api/v1/support/**").authenticated();
                             // Opaque, scoped support grants are verified inside the delegated
                             // service.

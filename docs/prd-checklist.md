@@ -11,8 +11,8 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | Complete ingestion | DOCX/HTML, structure/offsets, batch/drop uploads, unchanged-content dedupe, duplicate signals | Implemented on feature/prd-ingestion; 17 tests pass, frontend lint/build pass; desktop/390px batch upload and processing verified |
 | Document authorization | Named groups, document restrictions, pre-ranking SQL filtering, staff parity | Implemented: shared database access predicate, groups/admin UI; 17 tests pass. Retrieval integration follows in next slice. |
 | Retrieval | Embedding interface, pgvector + FTS, RRF, reranker interface, configurable variants | Implemented; 17 tests pass; live local embedding + cross-encoder smoke passed; scale/ablation benchmarks pending |
-| Answers | Hosted provider, streaming, grounded claims, citation/quote verification + retry/fallback, history | Pending |
-| Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Pending |
+| Answers | Hosted provider, streaming, grounded claims, citation/quote verification + retry/fallback, history | Implemented locally; 18 tests pass and live local answer/abstention smoke passes. Hosted verification, quality evaluation and latency targets remain pending. |
+| Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Implemented; browser verified citation → version → highlighted full text and saved feedback. Mobile recheck pending (viewport override did not apply). |
 | Customer administration | Invitations/approval, workspace members/groups, settings, query log, weekly costs | Pending |
 | Feedback | Votes/reasons, unanswered CSV, corrected-answer evaluation queue | Pending |
 | Lifecycle/connector | Retention, full deletion, orphan reconciliation, Notion-export folder sync | Pending |

@@ -1,0 +1,55 @@
+.answer-result,
+.question-history {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.answer-result > p {
+  line-height: 1.8;
+  margin-block: 16px;
+}
+.citation-link {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+.cited-passage {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.7;
+}
+.cited-passage mark {
+  background: #fff0ab;
+  color: var(--text);
+}
+.answer-feedback {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 8px;
+}
+.answer-feedback input,
+.answer-feedback select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  padding: 8px;
+}
+.question-history ul {
+  padding-left: 20px;
+}
+.question-history li {
+  padding-block: 8px;
+  overflow-wrap: anywhere;
+}

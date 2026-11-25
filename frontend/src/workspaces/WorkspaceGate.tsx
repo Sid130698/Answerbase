@@ -28,6 +28,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 function selectedId() { return new URLSearchParams(window.location.search).get('workspace') }
 function navigate(id: string | null, create = false) {
   const url = new URL(window.location.href)
+  if (id !== selectedId()) for (const key of ['document','version','passage','conversation']) url.searchParams.delete(key)
   if (id) url.searchParams.set('workspace', id)
   else url.searchParams.delete('workspace')
   if (create) url.searchParams.set('createWorkspace', 'true')
