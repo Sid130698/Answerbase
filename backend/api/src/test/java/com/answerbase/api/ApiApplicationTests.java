@@ -34,8 +34,28 @@ class ApiApplicationTests {
     @Test
     void readinessIsPublicButApplicationAndManagementRoutesAreClosed() throws Exception {
         assertThat(get("/actuator/health/readiness").statusCode()).isEqualTo(200);
-        assertThat(get("/api/v1/workspaces").statusCode()).isEqualTo(403);
-        assertThat(get("/actuator/env").statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/workspaces").statusCode()).isEqualTo(401);
+        assertThat(get("/actuator/env").statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void openApiDescribesImplementedHealthEndpointsAndSwaggerLoads() throws Exception {
+        var specification = get("/v3/api-docs");
+        assertThat(specification.statusCode()).isEqualTo(200);
+        var json =
+                tools.jackson.databind.json.JsonMapper.builder()
+                        .build()
+                        .readTree(specification.body());
+        assertThat(json.path("info").path("title").asText()).isEqualTo("Answerbase API");
+        assertThat(json.path("paths").has("/actuator/health")).isTrue();
+        for (String group : java.util.List.of("readiness", "liveness")) {
+            String path = "/actuator/health/" + group;
+            assertThat(json.path("paths").path(path).has("get")).isTrue();
+            assertThat(get(path).statusCode()).isEqualTo(200);
+        }
+        assertThat(json.path("paths").has("/api/v1/workspaces")).isTrue();
+        assertThat(get("/swagger-ui/index.html").statusCode()).isEqualTo(200);
+        assertThat(get("/v3/api-docs/swagger-config").statusCode()).isEqualTo(200);
     }
 
     private HttpResponse<String> get(String path) throws Exception {

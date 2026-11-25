@@ -17,3 +17,7 @@
 tmp/
 evals/reports/*
 !evals/reports/.gitkeep
+
+supabase/signing_keys.json
+supabase/.temp/
+supabase/.branches/

@@ -9,3 +9,10 @@
 *.html
 *.svg
 !frontend/index.html
+**/.env
+**/.env.*
+supabase/signing_keys.json
+supabase/.temp
+supabase/.branches
+
+!support-frontend/index.html

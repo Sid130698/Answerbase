@@ -1,14 +1,17 @@
 # Answerbase
 
-Cited answers over company documents. This repository contains the initial monorepo scaffold; the RAG product is not implemented yet.
+Cited answers over company documents. Authentication, organization onboarding, and workspace access are implemented. Document ingestion and RAG are not implemented yet.
 
 ## Included
 
 - Java 21 / Spring Boot API and an independently runnable worker shell.
 - PostgreSQL + pgvector via Docker Compose; Flyway creates the vector extension and application schema.
-- React + TypeScript frontend with a real backend-readiness check.
-- Default-deny backend security: only health endpoints are publicly readable. JWT login and workspace authorization are next.
+- React + TypeScript product preview with Ask, Sources, and an evidence panel. Uploads and question answering are not connected yet.
+- Default-deny backend security: health and enabled API documentation endpoints are publicly readable. Supabase JWT authentication protects application APIs; organization isolation and explicit workspace memberships enforce access.
+- Self-service organization creation, one organization per account, workspace creation/switching, and workspace membership APIs. See [organization permissions](docs/organizations.md).
 - Maven wrapper, npm lockfile, lint/format checks, integration smoke tests, and GitHub Actions CI.
+
+- Independent Answerbase staff console in `support-frontend/`, with dedicated staff login, scoped customer delegation and audited workspace access repairs. See [support setup](docs/support.md).
 
 ## Start locally
 
@@ -21,6 +24,7 @@ docker compose up --build -d --wait
 
 Open http://localhost:5173. API readiness: http://localhost:8080/actuator/health/readiness.
 PostgreSQL is exposed locally on port 55432 to avoid colliding with a system installation.
+Swagger UI: http://localhost:5173/swagger-ui/index.html (or API port 8080). OpenAPI JSON: http://localhost:5173/v3/api-docs.
 The worker's management port is internal. All published development ports bind to localhost.
 
 ```sh
@@ -57,7 +61,7 @@ make test
 ```
 
 This starts the local database, runs `./mvnw verify` from `backend/`, and runs frontend lint/typecheck/build.
-Backend tests use real PostgreSQL: they check Flyway/pgvector bootstrap and that non-health routes are denied.
+Backend tests use real PostgreSQL: they check Flyway/pgvector bootstrap, JWT signature and claim validation, and default-deny route authorization.
 `make format` applies Java formatting. CI runs the same checks on Java 21 and Node 24, selecting frontend/backend jobs from changed paths.
 
 ## Repository layout
@@ -84,10 +88,29 @@ deployment credentials, or remote Git repository are configured. CI has no deplo
 
 ## Next implementation slice
 
-1. Workspace/membership schema and Supabase JWT validation.
-2. Protected workspace creation and access tests.
-3. Document/version/job schema, private storage, and ingestion worker.
-4. Permission-filtered retrieval, Groq generation, citations, and evaluation baseline.
-5. Frontend signup, upload, chat, and source viewing.
+1. Organization invitations/approval UI and workspace member management UI (approval is currently a local developer script; workspace membership APIs are implemented).
+2. Document/version/job schema, private storage, and ingestion worker.
+3. Permission-filtered retrieval, Groq generation, citations, and evaluation baseline.
+4. Frontend upload, chat, and source viewing.
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
+
+## API documentation
+
+Springdoc generates OpenAPI from implemented routes. Swagger is served at `/swagger-ui/index.html`,
+and JSON at `/v3/api-docs`. Health, authenticated identity, organization creation, workspace creation/read, and workspace membership operations are documented.
+Both the local Nginx frontend and Vite dev server proxy these paths to the API. Swagger executes against the same origin.
+
+Set `API_DOCS_ENABLED=false` to disable the spec/UI and their public security allowlist.
+Documentation does not grant access to protected API routes. Tests check this boundary and the disabled configuration.
+When adding controllers, annotate request/response behavior and verify the generated contract. No hand-maintained endpoint catalog is needed.
+
+## UI design system
+
+[DESIGN.md](DESIGN.md) defines typography, colors, spacing, motion, and critique expectations derived from the requested design references.
+[frontend/AGENTS.md](frontend/AGENTS.md) carries those rules into future UI tasks. Fonts are self-hosted; there are no runtime font-service calls.
+Customer navigation contains Ask and Sources. Swagger remains separate developer tooling.
+
+## Authentication
+
+Email/password registration, email confirmation, login, recovery, and sign-out use Supabase Auth. The API verifies access tokens at `GET /api/v1/me`. See [local and hosted auth setup](docs/authentication.md). Organization enrollment and workspace membership are implemented; document workflows are still pending. See [organization setup](docs/organizations.md).

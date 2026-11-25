@@ -1,53 +1,61 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { WorkspaceGate, type Workspace } from './workspaces/WorkspaceGate'
+import { Icon } from './components/Icon'
 import './App.css'
+import { SignOut } from './auth/AuthGate'
+import { useIdentity } from './auth/identity'
 
-type Connection = 'checking' | 'ready' | 'unavailable'
-const apiBase = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+function currentView() { return window.location.hash === '#sources' ? 'sources' : 'ask' }
 
 export default function App() {
-  const [connection, setConnection] = useState<Connection>('checking')
+  return <WorkspaceGate>{(workspace, selector) => <WorkspaceApp key={workspace.id} workspace={workspace} selector={selector} />}</WorkspaceGate>
+}
 
+function WorkspaceApp({ workspace, selector }: { workspace: Workspace; selector: ReactNode }) {
+  const identity = useIdentity()
+  const [view, setView] = useState(currentView)
+  const [question, setQuestion] = useState('')
   useEffect(() => {
-    let disposed = false
-    const controller = new AbortController()
-    const timeout = window.setTimeout(() => controller.abort(), 5000)
-    fetch(`${apiBase}/actuator/health/readiness`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Backend unavailable')
-        const body: { status?: string } = await response.json()
-        if (!disposed) setConnection(body.status === 'UP' ? 'ready' : 'unavailable')
-      })
-      .catch(() => { if (!disposed) setConnection('unavailable') })
-      .finally(() => window.clearTimeout(timeout))
-    return () => {
-      disposed = true
-      controller.abort()
-      window.clearTimeout(timeout)
-    }
+    const sync = () => setView(currentView())
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
   }, [])
+  useEffect(() => { document.title = `${view === 'sources' ? 'Sources' : 'Ask'} · Answerbase` }, [view])
 
-  return (
-    <main>
-      <header><a className="brand" href="/">Answerbase<span> / development</span></a></header>
-      <section className="intro">
-        <p className="eyebrow">Repository foundation</p>
-        <h1>From documents<br />to verifiable answers.</h1>
-        <p className="lede">The application scaffold is ready. Document ingestion, workspace access,
-          and cited question answering are the next implementation steps.</p>
-      </section>
-      <section className="status" aria-label="System status">
-        <div><h2>Backend readiness</h2><p>Live check of the API and its database connection.</p></div>
-        <span className={`badge ${connection}`} role="status">
-          {connection === 'checking' ? 'Checking connection…' : connection === 'ready' ? 'Connected' : 'Unavailable'}
-        </span>
-      </section>
-      {connection === 'unavailable' && <p className="help">Start the local stack with <code>docker compose up --build -d --wait</code>, then reload.</p>}
-      <section className="modules" aria-label="Planned product capabilities">
-        <article><span>01</span><h2>Workspace access</h2><p>Verified identities, membership, and document permissions.</p><small>Not implemented</small></article>
-        <article><span>02</span><h2>Document ingestion</h2><p>Versioned uploads with asynchronous parsing and indexing.</p><small>Not implemented</small></article>
-        <article><span>03</span><h2>Cited answers</h2><p>Permission-aware retrieval, evidence, and measured quality.</p><small>Not implemented</small></article>
-      </section>
-      <footer>Local scaffold · No LLM calls · No customer documents</footer>
-    </main>
-  )
+  return <div className="app-layout">
+    <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); document.getElementById('main-content')?.focus() }}>Skip to content</a>
+    <aside className="sidebar">
+      <a href="#ask" className="brand" aria-label="Answerbase home"><span className="brand-mark" aria-hidden="true">a.</span>Answerbase</a>
+      {selector}
+      <nav aria-label="Main navigation">
+        <a href="#ask" className={`nav-link ${view === 'ask' ? 'selected' : ''}`} aria-current={view === 'ask' ? 'page' : undefined}><Icon name="search" />Ask</a>
+        <a href="#sources" className={`nav-link ${view === 'sources' ? 'selected' : ''}`} aria-current={view === 'sources' ? 'page' : undefined}><Icon name="book" />Sources</a>
+      </nav>
+      <div className="sidebar-note"><p className="account-email">{identity.email}</p><SignOut /></div>
+    </aside>
+    <div className="workspace">
+      <header className="topbar"><span>{workspace.name} <span aria-hidden="true">/</span> <strong>{view === 'sources' ? 'Sources' : 'Ask'}</strong></span><span className="preview-label">Product preview</span></header>
+      <main id="main-content" tabIndex={-1}>
+        {view === 'ask' ? <div className="ask-layout">
+          <section className="question-space" aria-labelledby="ask-title">
+            <div className="eyebrow">ASK YOUR KNOWLEDGE</div>
+            <h1 id="ask-title">Find the answer.<br /><span>Know where it came from.</span></h1>
+            <p className="intro">Ask a question about your team's documents. Follow each answer back to its source.</p>
+            <div className="composer">
+              <label className="visually-hidden" htmlFor="question">Your question</label>
+              <textarea id="question" value={question} onChange={event => setQuestion(event.target.value)} placeholder="What would you like to know?" rows={3} aria-describedby="question-help" />
+              <div className="composer-footer"><span><Icon name="book" />No sources connected</span><button className="button primary" disabled aria-describedby="question-help">Ask question <span aria-hidden="true">↑</span></button></div>
+            </div>
+            <p className="field-help" id="question-help">Answers will be available once document uploads and search are connected. You can draft a question here.</p>
+            <div className="first-step"><div className="step-mark"><Icon name="book" size={22} /></div><div><h2>Start with your team's knowledge</h2><p>Add the documents your team relies on, then ask questions in plain language.</p><a className="text-link" href="#sources">View sources <span aria-hidden="true">→</span></a></div></div>
+          </section>
+          <aside className="evidence-panel" aria-labelledby="evidence-title"><div className="eyebrow">EVIDENCE</div><h2 id="evidence-title">The source behind the answer</h2><div className="document-symbol" aria-hidden="true"><Icon name="book" size={32} /></div><p>When you ask a question, supporting passages will appear here so you can check the original context.</p><div className="evidence-rule" /><p className="small-note">No answer yet. No sources to cite.</p></aside>
+        </div> : <section className="sources-page" aria-labelledby="sources-title">
+          <div className="page-heading"><div><div className="eyebrow">WORKSPACE KNOWLEDGE</div><h1 id="sources-title">Sources</h1><p>The documents behind your team's answers.</p></div><button className="button primary" disabled aria-describedby="upload-help">+ Add sources</button></div>
+          <p className="preview-note" id="upload-help">Document uploads are not available in this preview yet.</p>
+          <div className="sources-empty"><div className="empty-symbol"><Icon name="book" size={32} /></div><h2>Your knowledge starts here</h2><p>There are no documents in this workspace. Once uploads are connected, this is where you'll add sources and track when they're ready to answer questions.</p><a href="#ask" className="text-link">Back to Ask <span aria-hidden="true">→</span></a></div>
+        </section>}
+      </main>
+    </div>
+  </div>
 }
