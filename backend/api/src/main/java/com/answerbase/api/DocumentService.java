@@ -396,6 +396,16 @@ class DocumentService {
         }
     }
 
+    record SourceText(String filename, String text) {}
+
+    SourceText source(UUID user, UUID workspace, UUID document, UUID id) {
+        var v = version(user, workspace, document, id, false);
+        if (v.get("extracted_text") == null)
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Source text has not finished processing");
+        return new SourceText((String) v.get("filename"), (String) v.get("extracted_text"));
+    }
+
     List<Chunk> chunks(UUID user, UUID workspace, UUID document, UUID id, int offset) {
         var v = version(user, workspace, document, id, false);
         if (!v.get("status").equals("processed"))

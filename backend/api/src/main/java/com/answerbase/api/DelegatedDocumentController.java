@@ -121,6 +121,20 @@ class DelegatedDocumentController {
                 .body(original.bytes());
     }
 
+    @GetMapping("/{document}/versions/{version}/source")
+    @Operation(summary = "Get complete inert source text for passage highlighting")
+    DocumentService.SourceText source(
+            @RequestHeader("X-Support-Grant") String grant,
+            @PathVariable UUID workspace,
+            @PathVariable UUID document,
+            @PathVariable UUID version) {
+        return delegation.documentOperation(
+                grant,
+                workspace,
+                "source",
+                user -> service.source(user, workspace, document, version));
+    }
+
     @GetMapping("/{document}/versions/{version}/chunks")
     @Operation(summary = "Read extracted passages with page or line references, 50 per page")
     List<DocumentService.Chunk> chunks(

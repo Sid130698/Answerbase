@@ -28,3 +28,5 @@ fieldset { border: 1px solid var(--border); margin: 16px 0; padding: 16px; }
 .access-create label { grid-column: 1 / -1; font-weight: 500; }
 .access-create input { min-height: 44px; min-width: 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); font: inherit; }
 @media(max-width: 600px) { .access-create { grid-template-columns: 1fr; width: 100%; }.access-create button { justify-self: start; } }
+
+.source-passage.citation-target { border-left: 4px solid var(--accent); padding-left: 16px; background: #fff9e5; }

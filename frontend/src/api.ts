@@ -6,7 +6,7 @@ export async function request(path: string, init?: RequestInit) {
   else {
     const { data } = await supabase!.auth.getSession()
     if (!data.session) throw new Error('Sign in to continue.')
-    response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1${path}`, { ...init, signal: AbortSignal.timeout(60000), headers: { ...init?.headers, Authorization: `Bearer ${data.session.access_token}` } })
+    response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1${path}`, { ...init, signal: AbortSignal.timeout(path.endsWith('/stream') ? 420000 : 60000), headers: { ...init?.headers, Authorization: `Bearer ${data.session.access_token}` } })
   }
   if (!response.ok) {
     const body = await response.json().catch(() => null)
