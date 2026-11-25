@@ -93,49 +93,9 @@ class QuestionService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Provide request/conversation IDs and a question of 1–2000 characters");
-        UUID id = UUID.randomUUID();
+        UUID execution = UUID.randomUUID();
         UUID existing =
-                tx.execute(
-                        s -> {
-                            jdbc.queryForList(
-                                    "SELECT pg_advisory_xact_lock(hashtextextended(?::text,0))",
-                                    user + ":" + body.requestKey());
-                            var rows =
-                                    jdbc.queryForList(
-                                            "SELECT id,question,conversation_id,status FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND request_key=?",
-                                            workspace,
-                                            user,
-                                            body.requestKey());
-                            if (!rows.isEmpty()) {
-                                var row = rows.getFirst();
-                                if (!question.equals(row.get("question"))
-                                        || !body.conversationId()
-                                                .equals(row.get("conversation_id")))
-                                    throw new ResponseStatusException(
-                                            HttpStatus.CONFLICT,
-                                            "Request key already used for a different question");
-                                if (row.get("status").equals("complete"))
-                                    return (UUID) row.get("id");
-                                if (row.get("status").equals("running"))
-                                    throw new ResponseStatusException(
-                                            HttpStatus.CONFLICT,
-                                            "This question is still running. Check history before retrying.");
-                                jdbc.update(
-                                        "UPDATE answerbase.questions SET status='running',error=NULL WHERE id=?",
-                                        row.get("id"));
-                                return (UUID) row.get("id");
-                            }
-                            jdbc.update(
-                                    "INSERT INTO answerbase.questions(id,organization_id,workspace_id,user_id,request_key,conversation_id,question,status) VALUES (?,?,?,?,?,?,?,'running')",
-                                    id,
-                                    access.organizationId(),
-                                    workspace,
-                                    user,
-                                    body.requestKey(),
-                                    body.conversationId(),
-                                    question);
-                            return id;
-                        });
+                reserve(user, workspace, body, question, access.organizationId(), execution);
         var prior =
                 jdbc.queryForMap("SELECT status FROM answerbase.questions WHERE id=?", existing);
         if (prior.get("status").equals("complete")) return read(user, workspace, existing);
@@ -236,18 +196,23 @@ class QuestionService {
                             found.options(),
                             "message",
                             message);
-            jdbc.update(
-                    "UPDATE answerbase.questions SET status='complete',answer=?::jsonb,evidence=?::jsonb,abstained=?,model=?,embedding_model=?,input_tokens=?,output_tokens=?,cost_usd=?,trace=?::jsonb,completed_at=now() WHERE id=?",
-                    JsonHttp.JSON.writeValueAsString(verified),
-                    JsonHttp.JSON.writeValueAsString(evidence),
-                    verified.abstained(),
-                    model,
-                    found.embeddingModel(),
-                    input,
-                    output,
-                    local ? 0.0 : null,
-                    JsonHttp.JSON.writeValueAsString(trace),
-                    existing);
+            int published =
+                    jdbc.update(
+                            "UPDATE answerbase.questions SET status='complete',answer=?::jsonb,evidence=?::jsonb,abstained=?,model=?,embedding_model=?,input_tokens=?,output_tokens=?,cost_usd=?,trace=?::jsonb,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running' AND lease_until>now()",
+                            JsonHttp.JSON.writeValueAsString(verified),
+                            JsonHttp.JSON.writeValueAsString(evidence),
+                            verified.abstained(),
+                            model,
+                            found.embeddingModel(),
+                            input,
+                            output,
+                            local ? 0.0 : null,
+                            JsonHttp.JSON.writeValueAsString(trace),
+                            existing,
+                            execution);
+            if (published != 1)
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT, "This attempt expired. Retry the question.");
             org.slf4j.LoggerFactory.getLogger(QuestionService.class)
                     .info(
                             "query_complete id={} workspace={} latency_ms={} abstained={} input_tokens={} output_tokens={}",
@@ -260,9 +225,10 @@ class QuestionService {
             return read(user, workspace, existing);
         } catch (Exception e) {
             jdbc.update(
-                    "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now() WHERE id=?",
+                    "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running'",
                     "Answer service unavailable or access changed. Retry the question.",
-                    existing);
+                    existing,
+                    execution);
             if (e instanceof ResponseStatusException status) throw status;
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
@@ -270,10 +236,100 @@ class QuestionService {
         }
     }
 
+    private UUID reserve(
+            UUID user,
+            UUID workspace,
+            Ask body,
+            String question,
+            UUID organization,
+            UUID execution) {
+        return tx.execute(
+                status -> {
+                    // A short global lock makes admission limits consistent across API replicas.
+                    jdbc.queryForList(
+                            "SELECT pg_advisory_xact_lock(hashtextextended(?::text,0))",
+                            "query-capacity");
+                    jdbc.queryForList(
+                            "SELECT pg_advisory_xact_lock(hashtextextended(?::text,0))",
+                            "query-user:" + user);
+                    jdbc.queryForList(
+                            "SELECT pg_advisory_xact_lock(hashtextextended(?::text,0))",
+                            "query-workspace:" + workspace);
+                    var rows =
+                            jdbc.queryForList(
+                                    "SELECT id,question,conversation_id,status,lease_until>now() AS active FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND request_key=?",
+                                    workspace,
+                                    user,
+                                    body.requestKey());
+                    UUID id = rows.isEmpty() ? UUID.randomUUID() : (UUID) rows.getFirst().get("id");
+                    if (!rows.isEmpty()) {
+                        var row = rows.getFirst();
+                        if (!question.equals(row.get("question"))
+                                || !body.conversationId().equals(row.get("conversation_id")))
+                            throw new ResponseStatusException(
+                                    HttpStatus.CONFLICT,
+                                    "Request key already used for a different question");
+                        if ("complete".equals(row.get("status"))) return id;
+                        if ("running".equals(row.get("status"))
+                                && Boolean.TRUE.equals(row.get("active")))
+                            throw new ResponseStatusException(
+                                    HttpStatus.CONFLICT,
+                                    "This question is still running. Check history before retrying.");
+                    }
+                    int recent =
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.question_attempts WHERE user_id=? AND created_at>now()-interval '1 minute'",
+                                    Integer.class,
+                                    user);
+                    int activeUser =
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.questions WHERE user_id=? AND status='running' AND lease_until>now()",
+                                    Integer.class,
+                                    user);
+                    int activeWorkspace =
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.questions WHERE workspace_id=? AND status='running' AND lease_until>now()",
+                                    Integer.class,
+                                    workspace);
+                    int activeTotal =
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.questions WHERE status='running' AND lease_until>now()",
+                                    Integer.class);
+                    if (recent >= 10 || activeUser >= 1 || activeWorkspace >= 3 || activeTotal >= 4)
+                        throw new ResponseStatusException(
+                                HttpStatus.TOO_MANY_REQUESTS,
+                                "Question capacity reached. Wait for the active answer or retry in a minute.");
+                    if (rows.isEmpty())
+                        jdbc.update(
+                                "INSERT INTO answerbase.questions(id,organization_id,workspace_id,user_id,request_key,conversation_id,question,status,execution_token,lease_until) VALUES(?,?,?,?,?,?,?,'running',?,now()+interval '10 minutes')",
+                                id,
+                                organization,
+                                workspace,
+                                user,
+                                body.requestKey(),
+                                body.conversationId(),
+                                question,
+                                execution);
+                    else
+                        jdbc.update(
+                                "UPDATE answerbase.questions SET status='running',error=NULL,completed_at=NULL,execution_token=?,lease_until=now()+interval '10 minutes' WHERE id=?",
+                                execution,
+                                id);
+                    jdbc.update(
+                            "INSERT INTO answerbase.question_attempts(id,organization_id,workspace_id,question_id,user_id) VALUES(?,?,?,?,?)",
+                            execution,
+                            organization,
+                            workspace,
+                            id,
+                            user);
+                    return id;
+                });
+    }
+
     List<Map<String, Object>> history(UUID user, UUID workspace, UUID conversation) {
         workspaces.get(user, workspace);
         return jdbc.queryForList(
-                "SELECT id,question,status,abstained,created_at,error FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND conversation_id=? ORDER BY created_at DESC LIMIT 20",
+                "SELECT id,question,CASE WHEN status='running' AND lease_until<=now() THEN 'failed' ELSE status END AS status,abstained,created_at,error FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND conversation_id=? ORDER BY created_at DESC LIMIT 20",
                 workspace,
                 user,
                 conversation);
