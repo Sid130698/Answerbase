@@ -1,4 +1,7 @@
-.PHONY: up down db test backend-check frontend-check format
+.PHONY: local up down db test backend-check frontend-check format
+local:
+	node scripts/start-local.mjs
+
 up:
 	docker compose up --build -d --wait
 
