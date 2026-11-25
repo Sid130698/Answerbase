@@ -30,7 +30,14 @@ class DocumentService {
     record Original(String filename, String mediaType, byte[] bytes) {}
 
     record Chunk(
-            int ordinal, Integer pageNumber, Integer startLine, Integer endLine, String content) {}
+            int ordinal,
+            Integer pageNumber,
+            Integer startLine,
+            Integer endLine,
+            String content,
+            String sectionPath,
+            Integer startOffset,
+            Integer endOffset) {}
 
     private final JdbcTemplate jdbc;
     private final WorkspaceService workspaces;
@@ -82,6 +89,63 @@ class DocumentService {
                                 rs.getObject("processed", UUID.class)),
                 w.organizationId(),
                 workspace);
+    }
+
+    record Duplicate(
+            UUID documentId,
+            String title,
+            UUID similarDocumentId,
+            String similarTitle,
+            String kind,
+            double similarity) {}
+
+    List<Duplicate> duplicates(UUID user, UUID workspace) {
+        var w = access(user, workspace, true);
+        var rows =
+                jdbc.queryForList(
+                        "SELECT d.id,d.title,v.checksum,v.extracted_text FROM answerbase.documents d JOIN LATERAL (SELECT checksum,extracted_text FROM answerbase.document_versions WHERE document_id=d.id ORDER BY version_number DESC LIMIT 1) v ON true WHERE d.organization_id=? AND d.workspace_id=? ORDER BY d.id LIMIT 2000",
+                        w.organizationId(),
+                        workspace);
+        var tokens =
+                rows.stream()
+                        .map(
+                                r ->
+                                        new HashSet<>(
+                                                Arrays.asList(
+                                                        Objects.toString(
+                                                                        r.get("extracted_text"), "")
+                                                                .toLowerCase(Locale.ROOT)
+                                                                .split("\\W+"))))
+                        .toList();
+        var result = new ArrayList<Duplicate>();
+        for (int i = 0; i < rows.size(); i++)
+            for (int j = i + 1; j < rows.size(); j++) {
+                var a = rows.get(i);
+                var b = rows.get(j);
+                boolean exact = a.get("checksum").equals(b.get("checksum"));
+                double score = 0;
+                if (exact) score = 1;
+                else if (tokens.get(i).size() >= 10 && tokens.get(j).size() >= 10) {
+                    var intersection = new HashSet<>(tokens.get(i));
+                    intersection.retainAll(tokens.get(j));
+                    score =
+                            (double) intersection.size()
+                                    / (tokens.get(i).size()
+                                            + tokens.get(j).size()
+                                            - intersection.size());
+                }
+                if (score >= 0.85)
+                    result.add(
+                            new Duplicate(
+                                    (UUID) a.get("id"),
+                                    (String) a.get("title"),
+                                    (UUID) b.get("id"),
+                                    (String) b.get("title"),
+                                    exact ? "identical" : "similar vocabulary",
+                                    score));
+                if (result.size() >= 100) return result;
+            }
+        return result;
     }
 
     List<Version> versions(UUID user, UUID workspace, UUID document) {
@@ -147,10 +211,18 @@ class DocumentService {
                         ? "application/pdf"
                         : lower.endsWith(".txt")
                                 ? "text/plain"
-                                : lower.endsWith(".md") ? "text/markdown" : null;
+                                : lower.endsWith(".md")
+                                        ? "text/markdown"
+                                        : lower.endsWith(".docx")
+                                                ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                                : (lower.endsWith(".html")
+                                                                || lower.endsWith(".htm"))
+                                                        ? "text/html"
+                                                        : null;
         if (media == null)
             throw new ResponseStatusException(
-                    HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Upload a PDF, TXT, or Markdown file");
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Upload a PDF, DOCX, HTML, TXT, or Markdown file");
         if (media.equals("application/pdf")
                 && (bytes.length < 5
                         || !new String(bytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII)
@@ -185,6 +257,21 @@ class DocumentService {
                     "SELECT * FROM answerbase.document_versions WHERE id=?",
                     (rs, n) -> map(rs),
                     v.get("id"));
+        }
+        if (document != null) {
+            var same =
+                    jdbc.query(
+                            "SELECT * FROM answerbase.document_versions WHERE document_id=? AND organization_id=? AND workspace_id=? ORDER BY version_number DESC LIMIT 1",
+                            (rs, n) -> map(rs),
+                            document,
+                            w.organizationId(),
+                            workspace);
+            if (!same.isEmpty()
+                    && !jdbc.queryForList(
+                                    "SELECT id FROM answerbase.document_versions WHERE id=? AND checksum=?",
+                                    same.getFirst().id(),
+                                    checksum)
+                            .isEmpty()) return same.getFirst();
         }
         if (jdbc.queryForObject(
                         "SELECT count(*) FROM answerbase.document_versions WHERE workspace_id=?",
@@ -305,7 +392,10 @@ class DocumentService {
                                 rs.getObject("page_number", Integer.class),
                                 rs.getObject("start_line", Integer.class),
                                 rs.getObject("end_line", Integer.class),
-                                rs.getString("content")),
+                                rs.getString("content"),
+                                rs.getString("section_path"),
+                                rs.getObject("start_offset", Integer.class),
+                                rs.getObject("end_offset", Integer.class)),
                 id,
                 v.get("organization_id"),
                 workspace,

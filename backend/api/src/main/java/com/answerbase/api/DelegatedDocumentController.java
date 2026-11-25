@@ -29,10 +29,21 @@ class DelegatedDocumentController {
                 grant, workspace, "list", user -> service.list(user, workspace));
     }
 
+    @GetMapping("/duplicates")
+    @Operation(
+            summary =
+                    "Find exact and potential near duplicates for editor/admin review; up to 100 pairs")
+    List<DocumentService.Duplicate> duplicates(
+            @RequestHeader("X-Support-Grant") String grant, @PathVariable UUID workspace) {
+        return delegation.documentOperation(
+                grant, workspace, "duplicates", user -> service.duplicates(user, workspace));
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(
-            summary = "Upload a new document (editor/admin); PDF, TXT or MD, up to 5 MB",
+            summary =
+                    "Upload a new document (editor/admin); PDF, DOCX, HTML, TXT or MD, up to 5 MB",
             description =
                     "Requires a UUID Idempotency-Key. Identical retries return the existing version. Original bytes are private. Processing is asynchronous; processed means text extracted, not embedded.")
     DocumentService.Version upload(

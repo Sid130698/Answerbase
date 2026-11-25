@@ -56,7 +56,8 @@ public final class IngestionProcessor {
             if (!checksum.equals(job.get("checksum")))
                 throw new java.io.IOException(
                         "Stored file checksum mismatch. Upload a new version.");
-            var chunks = new TextExtractor().extract(bytes, (String) job.get("media_type"));
+            var parsed = new TextExtractor().parse(bytes, (String) job.get("media_type"));
+            var chunks = parsed.chunks();
             tx.executeWithoutResult(
                     status -> {
                         if (!owns(id, lease)) return;
@@ -64,7 +65,7 @@ public final class IngestionProcessor {
                                 "DELETE FROM answerbase.document_chunks WHERE version_id=?", id);
                         for (var chunk : chunks)
                             jdbc.update(
-                                    "INSERT INTO answerbase.document_chunks (organization_id,workspace_id,version_id,ordinal,page_number,start_line,end_line,content) VALUES (?,?,?,?,?,?,?,?)",
+                                    "INSERT INTO answerbase.document_chunks (organization_id,workspace_id,version_id,ordinal,page_number,start_line,end_line,content,section_path,start_offset,end_offset) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                                     job.get("organization_id"),
                                     job.get("workspace_id"),
                                     id,
@@ -72,9 +73,13 @@ public final class IngestionProcessor {
                                     chunk.pageNumber(),
                                     chunk.startLine(),
                                     chunk.endLine(),
-                                    chunk.content());
+                                    chunk.content(),
+                                    chunk.sectionPath(),
+                                    chunk.startOffset(),
+                                    chunk.endOffset());
                         jdbc.update(
-                                "UPDATE answerbase.document_versions SET status='processed',error=NULL WHERE id=?",
+                                "UPDATE answerbase.document_versions SET status='processed',error=NULL,extracted_text=?,processed_at=now() WHERE id=?",
+                                parsed.text(),
                                 id);
                         jdbc.update(
                                 "UPDATE answerbase.ingestion_jobs SET state='done',lease_token=NULL,lease_until=NULL WHERE version_id=?",

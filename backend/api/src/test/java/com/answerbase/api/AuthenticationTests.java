@@ -770,6 +770,29 @@ class AuthenticationTests {
                                             999,
                                             "leak"))
                     .isInstanceOf(org.springframework.dao.DataAccessException.class);
+            var unchanged =
+                    upload(
+                            base + "/" + document + "/versions",
+                            jwt,
+                            UUID.randomUUID(),
+                            "policy.txt",
+                            "Private policy\nRefunds within 30 days.");
+            assertThat(mapper.readTree(unchanged.body()).path("id").asText())
+                    .isEqualTo(version.toString());
+            assertThat(
+                            upload(
+                                            base,
+                                            jwt,
+                                            UUID.randomUUID(),
+                                            "copy.txt",
+                                            "Private policy\nRefunds within 30 days.")
+                                    .statusCode())
+                    .isEqualTo(202);
+            assertThat(processor.processOne()).isTrue();
+            assertThat(get(base + "/duplicates", jwt).body()).contains("identical", "copy.txt");
+            assertThat(get(base + "/duplicates", userToken(viewer)).statusCode()).isEqualTo(403);
+            assertThat(get(versionPath + "/chunks", jwt).body())
+                    .contains("startOffset", "endOffset", "sectionPath");
             // A malformed replacement fails without replacing the usable version.
             var next =
                     upload(

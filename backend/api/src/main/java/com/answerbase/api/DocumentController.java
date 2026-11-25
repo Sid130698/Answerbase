@@ -30,10 +30,20 @@ class DocumentController {
         return service.list(UUID.fromString(jwt.getSubject()), workspace);
     }
 
+    @GetMapping("/duplicates")
+    @Operation(
+            summary =
+                    "Find exact and potential near duplicates for editor/admin review; up to 100 pairs")
+    List<DocumentService.Duplicate> duplicates(
+            @AuthenticationPrincipal Jwt jwt, @PathVariable UUID workspace) {
+        return service.duplicates(UUID.fromString(jwt.getSubject()), workspace);
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(
-            summary = "Upload a new document (editor/admin); PDF, TXT or MD, up to 5 MB",
+            summary =
+                    "Upload a new document (editor/admin); PDF, DOCX, HTML, TXT or MD, up to 5 MB",
             description =
                     "Requires a UUID Idempotency-Key. Identical retries return the existing version. Original bytes are private. Processing is asynchronous; processed means text extracted, not embedded.")
     DocumentService.Version upload(

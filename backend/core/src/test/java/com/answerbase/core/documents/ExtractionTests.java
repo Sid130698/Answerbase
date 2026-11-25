@@ -59,7 +59,9 @@ class ExtractionTests {
                         "text/plain");
         assertThat(split).hasSize(2);
         assertThat(split.get(0).endLine()).isEqualTo(1);
-        assertThat(split.get(1).startLine()).isEqualTo(2);
+        // Long paragraphs overlap; the second passage includes the tail of line one.
+        assertThat(split.get(1).startLine()).isEqualTo(1);
+        assertThat(split.get(1).endLine()).isEqualTo(2);
         assertThatThrownBy(() -> extractor.extract(new byte[] {(byte) 0xff}, "text/plain"))
                 .hasMessageContaining("UTF-8");
         assertThatThrownBy(() -> extractor.extract(new byte[0], "text/plain"))

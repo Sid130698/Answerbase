@@ -34,12 +34,15 @@ export function Sources({ workspace }: { workspace: Workspace }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [duplicates, setDuplicates] = useState<{title: string; similarTitle: string; kind: string; similarity: number}[] | null>(null)
   const [refresh, setRefresh] = useState(0)
   const [selected, setSelected] = useState(documentId)
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
+  const [uploadResults, setUploadResults] = useState<{name: string; status: string}[]>([])
+  const keys = useRef(new Map<File, string>())
   const [replacement, setReplacement] = useState('')
   const [busy, setBusy] = useState(false)
-  const key = useRef(crypto.randomUUID())
+  function chooseFiles(selected: File[]) { setFiles(selected.slice(0, 20)); setUploadResults([]); setError(selected.length > 20 ? 'Choose up to 20 files per batch.' : ''); keys.current.clear() }
   const input = useRef<HTMLInputElement>(null)
   const canWrite = ['admin', 'editor'].includes(workspace.role)
   const base = `/workspaces/${workspace.id}/documents`
@@ -56,26 +59,37 @@ export function Sources({ workspace }: { workspace: Workspace }) {
     return () => clearInterval(timer)
   }, [processing])
   async function upload(event: FormEvent) {
-    event.preventDefault(); if (!file || busy) return
-    if (file.size === 0 || file.size > 5 * 1024 * 1024) { setError('Choose a non-empty file no larger than 5 MB.'); return }
-    setBusy(true); setError(''); setNotice('')
-    const body = new FormData(); body.append('file', file)
-    try {
-      const response = await request(`${base}${replacement ? `/${replacement}/versions` : ''}`, { method: 'POST', headers: { 'Idempotency-Key': key.current }, body })
-      const version: Version = await response.json()
-      setFile(null); if (input.current) input.current.value = ''; key.current = crypto.randomUUID(); setReplacement('')
-      selectDocument(version.documentId); setRefresh(value => value + 1); setNotice('Original saved privately. Text extraction is queued.')
-    } catch (cause) { setError(problem(cause)) } finally { setBusy(false) }
+    event.preventDefault(); if (!files.length || busy) return
+    if (replacement && files.length !== 1) { setError('Choose one file when uploading a new version.'); return }
+    setBusy(true); setError(''); setNotice(''); setUploadResults([])
+    const failed: File[] = []; let saved = 0
+    for (const file of files) {
+      try {
+        if (file.size === 0 || file.size > 5 * 1024 * 1024) throw new Error('Choose a non-empty file no larger than 5 MB.')
+        const body = new FormData(); body.append('file', file)
+        if (!keys.current.has(file)) keys.current.set(file, crypto.randomUUID())
+        const response = await request(`${base}${replacement ? `/${replacement}/versions` : ''}`, { method: 'POST', headers: { 'Idempotency-Key': keys.current.get(file)! }, body })
+        const version: Version = await response.json(); saved++
+        setUploadResults(rows => [...rows, { name: file.name, status: 'Saved privately' }])
+        if (files.length === 1) selectDocument(version.documentId)
+      } catch (cause) {
+        failed.push(file); setUploadResults(rows => [...rows, { name: file.name, status: problem(cause) }])
+      }
+    }
+    setFiles(failed); if (input.current) input.current.value = ''
+    if (!failed.length) setReplacement('')
+    setRefresh(value => value + 1); setNotice(`${saved} document${saved === 1 ? '' : 's'} saved. ${failed.length ? 'Failed files remain selected for retry.' : 'Processing continues in the background.'}`); setBusy(false)
   }
   return <section className="sources-page" aria-labelledby="sources-title">
     <div className="page-heading"><div><div className="eyebrow">WORKSPACE KNOWLEDGE</div><h1 id="sources-title">Sources</h1><p>Private documents in {workspace.name}. Access follows workspace membership.</p></div><button className="button secondary" onClick={() => setRefresh(value => value + 1)}>Refresh</button></div>
-    {canWrite ? <form className="source-upload" onSubmit={upload}>
-      <div><label htmlFor="source-file">Add a source</label><input ref={input} id="source-file" type="file" accept=".pdf,.txt,.md" disabled={busy} onChange={event => { setFile(event.target.files?.[0] || null); key.current = crypto.randomUUID(); setError('') }} aria-describedby="upload-help" /><p id="upload-help" className="field-help">PDF with selectable text, UTF-8 TXT, or Markdown. Up to 5 MB; PDFs up to 200 pages. Scans need OCR and are not supported yet.</p></div>
-      <div><label htmlFor="source-target">Save as</label><select id="source-target" value={replacement} disabled={busy} onChange={event => { setReplacement(event.target.value); key.current = crypto.randomUUID() }}><option value="">New document</option>{documents.map(doc => <option key={doc.id} value={doc.id}>New version of {doc.title}</option>)}</select></div>
-      <button className="button primary" disabled={busy || !file}>{busy ? 'Uploading…' : 'Upload document'}</button>
+    {canWrite ? <form className="source-upload" onSubmit={upload} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (!busy) chooseFiles(Array.from(event.dataTransfer.files)) }}>
+      <div><label htmlFor="source-file">Add a source</label><input ref={input} id="source-file" type="file" accept=".pdf,.docx,.html,.htm,.txt,.md" multiple disabled={busy} onChange={event => chooseFiles(Array.from(event.target.files || []))} aria-describedby="upload-help" /><p id="upload-help" className="field-help">Drop files here or choose up to 20 PDF, DOCX, HTML, TXT, or Markdown files. Up to 5 MB each; PDFs up to 200 pages. Scans need OCR and are not supported yet.</p></div>
+      <div><label htmlFor="source-target">Save as</label><select id="source-target" value={replacement} disabled={busy} onChange={event => { setReplacement(event.target.value); keys.current.clear() }}><option value="">New document</option>{documents.map(doc => <option key={doc.id} value={doc.id}>New version of {doc.title}</option>)}</select></div>
+      <button className="button primary" disabled={busy || !files.length}>{busy ? 'Uploading…' : files.length > 1 ? `Upload ${files.length} documents` : 'Upload document'}</button>
     </form> : <p className="preview-note">You have viewer access. A workspace editor or admin can add documents.</p>}
     {error && <p className="source-error" role="alert">{error} <button className="text-link" onClick={() => setRefresh(value => value + 1)}>Retry loading</button></p>}
-    {notice && <p className="source-notice" role="status">{notice}</p>}
+    {notice && <p className="source-notice" role="status">{notice}</p>}{uploadResults.length > 0 && <ul className="upload-results" aria-label="Upload results">{uploadResults.map((result, index) => <li key={index}><strong>{result.name}</strong> — {result.status}</li>)}</ul>}
+    {canWrite && <div><button className="button secondary" onClick={async () => { try { setDuplicates(await (await request(`${base}/duplicates`)).json()) } catch (cause) { setError(problem(cause)) } }}>Check for duplicates</button>{duplicates && <div role="status">{duplicates.length ? <ul>{duplicates.map((pair, index) => <li key={index}>{pair.title} / {pair.similarTitle}: {pair.kind} ({Math.round(pair.similarity * 100)}% overlap). Review before removing either source.</li>)}</ul> : <p>No potential duplicates found.</p>}</div>}</div>}
     <p className="field-help">Text processing preserves page or line references. Question answering is not available yet.</p>
     {loading ? <p role="status">Loading sources…</p> : !documents.length ? <div className="sources-empty"><h2>Your knowledge starts here</h2><p>Add your first document to this workspace. Original files remain available for download.</p></div> : <div className="source-table-scroll"><table className="source-table"><caption className="visually-hidden">Documents in {workspace.name}</caption><thead><tr><th>Document</th><th>Latest version</th><th>Processing</th><th>Size</th></tr></thead><tbody>{documents.map(doc => <tr key={doc.id}><td><button className="text-link source-name" onClick={() => selectDocument(doc.id)}>{doc.title}</button></td><td>v{doc.latest.versionNumber}</td><td><span className={`source-status ${doc.latest.status}`}>{statusLabel[doc.latest.status]}</span>{doc.processedVersionId && doc.processedVersionId !== doc.latest.id && <small>Previous processed version available</small>}</td><td>{Math.max(1, Math.ceil(doc.latest.byteSize / 1024))} KB</td></tr>)}</tbody></table></div>}
     {selected && <DocumentDetail key={selected} base={base} id={selected} canWrite={canWrite} refresh={refresh} changed={() => setRefresh(value => value + 1)} />}
