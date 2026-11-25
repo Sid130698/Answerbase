@@ -30,3 +30,12 @@ management:
       group:
         readiness:
           include: readinessState,db
+
+# Identical storage configuration is required in API and worker.
+documents:
+  storage:
+    provider: ${DOCUMENT_STORAGE_PROVIDER:local}
+    root: ${DOCUMENT_STORAGE_ROOT:.cache/documents}
+    url: ${DOCUMENT_STORAGE_URL:}
+    bucket: ${DOCUMENT_STORAGE_BUCKET:answerbase-documents}
+    secret: ${DOCUMENT_STORAGE_SERVICE_KEY:}

@@ -1,12 +1,12 @@
 # Answerbase
 
-Cited answers over company documents. Authentication, organization onboarding, and workspace access are implemented. Document ingestion and RAG are not implemented yet.
+Cited answers over company documents. Authentication, organization onboarding, and workspace access are implemented. Private document upload, versioning, text extraction and source previews are implemented. Embeddings and RAG are next.
 
 ## Included
 
-- Java 21 / Spring Boot API and an independently runnable worker shell.
+- Java 21 / Spring Boot API and an independently runnable ingestion worker.
 - PostgreSQL + pgvector via Docker Compose; Flyway creates the vector extension and application schema.
-- React + TypeScript product preview with Ask, Sources, and an evidence panel. Uploads and question answering are not connected yet.
+- React + TypeScript product preview with Ask, Sources, and an evidence panel. Sources supports uploads, processing status, version history, original downloads and extracted passages. Question answering is not connected yet.
 - Default-deny backend security: health and enabled API documentation endpoints are publicly readable. Supabase JWT authentication protects application APIs; organization isolation and explicit workspace memberships enforce access.
 - Self-service organization creation, one organization per account, workspace creation/switching, and workspace membership APIs. See [organization permissions](docs/organizations.md).
 - Maven wrapper, npm lockfile, lint/format checks, integration smoke tests, and GitHub Actions CI.
@@ -48,7 +48,7 @@ java -jar api/target/answerbase-api-0.1.0-SNAPSHOT.jar
 In another terminal, `cd frontend && npm ci && npm run dev`.
 Vite proxies `/actuator` and `/api` to localhost:8080. The worker can run separately using
 `java -jar backend/worker/target/answerbase-worker-0.1.0-SNAPSHOT.jar` after the API has applied migrations.
-The worker is a readiness-enabled process shell: it does not ingest jobs yet.
+The worker polls the PostgreSQL ingestion queue. See [document ingestion](docs/document-ingestion.md) for shared private storage setup and limits.
 
 Host-run Java commands read `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` from the process environment;
 they do not automatically load the root `.env`. If changing the Compose database port or credentials, export the matching
@@ -89,9 +89,11 @@ deployment credentials, or remote Git repository are configured. CI has no deplo
 ## Next implementation slice
 
 1. Organization invitations/approval UI and workspace member management UI (approval is currently a local developer script; workspace membership APIs are implemented).
-2. Document/version/job schema, private storage, and ingestion worker.
+2. Document lifecycle: deletion/retention and orphan cleanup (upload, versioning and ingestion are implemented).
 3. Permission-filtered retrieval, Groq generation, citations, and evaluation baseline.
-4. Frontend upload, chat, and source viewing.
+4. Chat and citation navigation (upload and source text viewing are implemented).
+
+See [the five remaining product milestones](docs/roadmap.md).
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
 
@@ -113,4 +115,4 @@ Customer navigation contains Ask and Sources. Swagger remains separate developer
 
 ## Authentication
 
-Email/password registration, email confirmation, login, recovery, and sign-out use Supabase Auth. The API verifies access tokens at `GET /api/v1/me`. See [local and hosted auth setup](docs/authentication.md). Organization enrollment and workspace membership are implemented; document workflows are still pending. See [organization setup](docs/organizations.md).
+Email/password registration, email confirmation, login, recovery, and sign-out use Supabase Auth. The API verifies access tokens at `GET /api/v1/me`. See [local and hosted auth setup](docs/authentication.md). Organization enrollment and workspace membership are implemented; document ingestion is implemented. See [organization setup](docs/organizations.md).

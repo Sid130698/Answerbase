@@ -24,9 +24,16 @@ services:
       DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-answerbase}
       DATABASE_USERNAME: ${POSTGRES_USER:-answerbase}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-answerbase-local}
+      DOCUMENT_STORAGE_PROVIDER: ${DOCUMENT_STORAGE_PROVIDER:-local}
+      DOCUMENT_STORAGE_ROOT: /app/documents
+      DOCUMENT_STORAGE_URL: ${DOCUMENT_STORAGE_URL:-}
+      DOCUMENT_STORAGE_BUCKET: ${DOCUMENT_STORAGE_BUCKET:-answerbase-documents}
+      DOCUMENT_STORAGE_SERVICE_KEY: ${DOCUMENT_STORAGE_SERVICE_KEY:-}
       API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
       SUPABASE_AUTH_ISSUER: ${SUPABASE_AUTH_ISSUER:-}
       SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
+    volumes:
+      - document-data:/app/documents
     ports:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     depends_on:
@@ -39,11 +46,15 @@ services:
       start_period: 30s
       retries: 10
   worker:
+    mem_limit: 512m
+    restart: on-failure
     build:
       context: .
       dockerfile: infra/docker/backend.Dockerfile
       target: worker
     environment: *database-environment
+    volumes:
+      - document-data:/app/documents:ro
     depends_on:
       api:
         condition: service_healthy
@@ -89,3 +100,4 @@ services:
         condition: service_healthy
 volumes:
   postgres-data:
+  document-data:

@@ -556,6 +556,10 @@ class AuthenticationTests {
                                     .statusCode())
                     .isEqualTo(403);
             assertThat(get("/api/v1/support/me", grant).statusCode()).isEqualTo(401);
+            assertThat(
+                            delegated("GET", "/workspaces/" + space + "/documents", grant, null)
+                                    .statusCode())
+                    .isEqualTo(404);
             String repair = path + "/workspaces/" + space + "/members/" + member;
             assertThat(send("PUT", repair, staffJwt, "{\"role\":\"viewer\"}").statusCode())
                     .isEqualTo(204);
@@ -569,6 +573,17 @@ class AuthenticationTests {
                                             "{\"role\":\"viewer\"}")
                                     .statusCode())
                     .isEqualTo(404);
+            assertThat(
+                            delegated("GET", "/workspaces/" + space + "/documents", grant, null)
+                                    .statusCode())
+                    .isEqualTo(200);
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.support_audit WHERE actor_id=? AND target_user_id=? AND action='delegated.document.list'",
+                                    Integer.class,
+                                    UUID.fromString(employee),
+                                    UUID.fromString(member)))
+                    .isEqualTo(1);
             String replacement =
                     mapper.readTree(
                                     send(
@@ -580,6 +595,10 @@ class AuthenticationTests {
                             .path("token")
                             .asText();
             assertThat(delegated("GET", "/me", grant, null).statusCode()).isEqualTo(401);
+            assertThat(
+                            delegated("GET", "/workspaces/" + space + "/documents", grant, null)
+                                    .statusCode())
+                    .isEqualTo(401);
             assertThat(
                             delegated(
                                             "POST",
@@ -644,6 +663,191 @@ class AuthenticationTests {
                     UUID.fromString(secondEmployee));
             cleanup(company);
             cleanup(otherCompany);
+        }
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired DocumentService documents;
+    @org.springframework.beans.factory.annotation.Autowired WorkspaceService workspaceService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    com.answerbase.core.documents.DocumentStorage documentStorage;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    org.springframework.transaction.PlatformTransactionManager transactionManager;
+
+    @Test
+    void documentsArePrivateVersionedRetryableAndProcessedWithSourceLocations() throws Exception {
+        String owner = UUID.randomUUID().toString(),
+                viewer = UUID.randomUUID().toString(),
+                outsider = UUID.randomUUID().toString();
+        UUID org = provision(owner, "owner", null), otherOrg = provision(outsider, "owner", null);
+        provision(viewer, "member", org);
+        UUID workspace =
+                workspaceService
+                        .create(UUID.fromString(owner), UUID.randomUUID(), "Documents")
+                        .workspace()
+                        .id();
+        UUID otherWorkspace =
+                workspaceService
+                        .create(UUID.fromString(owner), UUID.randomUUID(), "Private team")
+                        .workspace()
+                        .id();
+        jdbc.update(
+                "INSERT INTO answerbase.workspace_members(organization_id,workspace_id,user_id,role) VALUES (?,?,?,'viewer')",
+                org,
+                workspace,
+                UUID.fromString(viewer));
+        String base = "/api/v1/workspaces/" + workspace + "/documents";
+        String jwt = userToken(owner);
+        var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+        var processor =
+                new com.answerbase.core.documents.IngestionProcessor(
+                        jdbc,
+                        new org.springframework.transaction.support.TransactionTemplate(
+                                transactionManager),
+                        documentStorage);
+        try {
+            UUID key = UUID.randomUUID();
+            assertThat(
+                            upload(
+                                            base,
+                                            userToken(viewer),
+                                            key,
+                                            "policy.txt",
+                                            "Private policy\nRefunds within 30 days.")
+                                    .statusCode())
+                    .isEqualTo(403);
+            assertThat(
+                            upload(base, userToken(outsider), key, "policy.txt", "Private policy")
+                                    .statusCode())
+                    .isEqualTo(404);
+            var first =
+                    upload(base, jwt, key, "policy.txt", "Private policy\nRefunds within 30 days.");
+            assertThat(first.statusCode()).isEqualTo(202);
+            UUID version = UUID.fromString(mapper.readTree(first.body()).path("id").asText());
+            UUID document =
+                    UUID.fromString(mapper.readTree(first.body()).path("documentId").asText());
+            assertThat(
+                            upload(
+                                            base,
+                                            jwt,
+                                            key,
+                                            "policy.txt",
+                                            "Private policy\nRefunds within 30 days.")
+                                    .body())
+                    .isEqualTo(first.body());
+            assertThat(upload(base, jwt, key, "policy.txt", "changed").statusCode()).isEqualTo(409);
+            assertThat(upload(base, jwt, UUID.randomUUID(), "fake.pdf", "not pdf").statusCode())
+                    .isEqualTo(400);
+            String versionPath = base + "/" + document + "/versions/" + version;
+            assertThat(get(versionPath + "/chunks", jwt).statusCode()).isEqualTo(409);
+            assertThat(get(versionPath + "/original", userToken(viewer)).body())
+                    .isEqualTo("Private policy\nRefunds within 30 days.");
+            assertThat(get(versionPath + "/original", userToken(outsider)).statusCode())
+                    .isEqualTo(404);
+            assertThat(
+                            get(
+                                            versionPath.replace(
+                                                            workspace.toString(),
+                                                            otherWorkspace.toString())
+                                                    + "/original",
+                                            jwt)
+                                    .statusCode())
+                    .isEqualTo(404);
+            assertThat(processor.processOne()).isTrue();
+            assertThat(get(versionPath + "/chunks", jwt).body())
+                    .contains("Refunds within 30 days.", "startLine", "endLine");
+            assertThat(get(versionPath + "/chunks", userToken(outsider)).statusCode())
+                    .isEqualTo(404);
+            assertThat(get(versionPath + "/original", null).statusCode()).isEqualTo(401);
+            assertThatThrownBy(
+                            () ->
+                                    jdbc.update(
+                                            "INSERT INTO answerbase.document_chunks(organization_id,workspace_id,version_id,ordinal,content) VALUES (?,?,?,?,?)",
+                                            otherOrg,
+                                            workspace,
+                                            version,
+                                            999,
+                                            "leak"))
+                    .isInstanceOf(org.springframework.dao.DataAccessException.class);
+            // A malformed replacement fails without replacing the usable version.
+            var next =
+                    upload(
+                            base + "/" + document + "/versions",
+                            jwt,
+                            UUID.randomUUID(),
+                            "broken.pdf",
+                            "%PDF-broken");
+            assertThat(next.statusCode()).isEqualTo(202);
+            UUID failed = UUID.fromString(mapper.readTree(next.body()).path("id").asText());
+            for (int attempt = 0; attempt < 3; attempt++) {
+                jdbc.update(
+                        "UPDATE answerbase.ingestion_jobs SET available_at=now()-interval '1 minute' WHERE version_id=?",
+                        failed);
+                assertThat(processor.processOne()).isTrue();
+            }
+            assertThat(get(base, jwt).body())
+                    .contains("failed", "\"processedVersionId\":\"" + version + "\"");
+            String retry = base + "/" + document + "/versions/" + failed + "/retry";
+            assertThat(send("POST", retry, userToken(viewer), null).statusCode()).isEqualTo(403);
+            assertThat(send("POST", retry, jwt, null).statusCode()).isEqualTo(204);
+            assertThat(send("POST", retry, jwt, null).statusCode()).isEqualTo(409);
+            // A dead worker's lease can be reclaimed and is capped by the attempt limit.
+            jdbc.update(
+                    "UPDATE answerbase.ingestion_jobs SET state='processing',lease_token=?,lease_until=now()-interval '1 minute',attempts=3 WHERE version_id=?",
+                    UUID.randomUUID(),
+                    failed);
+            assertThat(processor.processOne()).isTrue();
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT state FROM answerbase.ingestion_jobs WHERE version_id=?",
+                                    String.class,
+                                    failed))
+                    .isEqualTo("failed");
+            // Permission revocation takes effect for original files as well as listings.
+            jdbc.update(
+                    "DELETE FROM answerbase.workspace_members WHERE user_id=?",
+                    UUID.fromString(viewer));
+            assertThat(get(versionPath + "/original", userToken(viewer)).statusCode())
+                    .isEqualTo(404);
+        } finally {
+            for (var row :
+                    jdbc.queryForList(
+                            "SELECT storage_key FROM answerbase.document_versions WHERE organization_id=?",
+                            org)) documentStorage.delete((String) row.get("storage_key"));
+            jdbc.update("DELETE FROM answerbase.document_chunks WHERE organization_id=?", org);
+            jdbc.update(
+                    "DELETE FROM answerbase.ingestion_jobs WHERE version_id IN (SELECT id FROM answerbase.document_versions WHERE organization_id=?)",
+                    org);
+            jdbc.update("DELETE FROM answerbase.document_versions WHERE organization_id=?", org);
+            jdbc.update("DELETE FROM answerbase.documents WHERE organization_id=?", org);
+            cleanup(org);
+            cleanup(otherOrg);
+        }
+    }
+
+    private HttpResponse<String> upload(
+            String path, String jwt, UUID key, String filename, String content) throws Exception {
+        String boundary = "AnswerbaseTestBoundary";
+        String body =
+                "--"
+                        + boundary
+                        + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\""
+                        + filename
+                        + "\"\r\nContent-Type: application/octet-stream\r\n\r\n"
+                        + content
+                        + "\r\n--"
+                        + boundary
+                        + "--\r\n";
+        try (var client = HttpClient.newHttpClient()) {
+            return client.send(
+                    HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                            .header("Authorization", "Bearer " + jwt)
+                            .header("Idempotency-Key", key.toString())
+                            .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                            .POST(HttpRequest.BodyPublishers.ofString(body))
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString());
         }
     }
 

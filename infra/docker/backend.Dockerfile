@@ -6,6 +6,7 @@ RUN chmod +x mvnw && ./mvnw -B -DskipTests package
 FROM eclipse-temurin:21-jre-jammy AS runtime
 WORKDIR /app
 RUN groupadd --system answerbase && useradd --system --gid answerbase --home-dir /app answerbase
+RUN mkdir -p /app/documents && chown answerbase:answerbase /app/documents
 USER answerbase
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
 
