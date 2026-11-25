@@ -16,6 +16,6 @@ Use `GENERATION_PROVIDER=ollama`, `GENERATION_MODEL=llama3.1:8b`, and an accessi
 
 ## Known remaining work
 
-Durable recovery of interrupted requests, query admission/rate limits, retention/deletion, PII controls, administrative logs and evaluation reports are tracked in `prd-checklist.md`. A process crash can currently leave a request marked running; a new request key starts a new attempt. Do not treat this as production readiness.
+Query leases/admission limits and administrative logs are implemented in subsequent slices (see `query-reliability.md` and `query-administration.md`). Retention/deletion, PII controls and evaluation reports remain tracked in `prd-checklist.md`. Do not treat this as production readiness.
 
 Verified locally on 2026-11-26: 18 backend tests pass; frontend lint/build pass. Live llama3.1:8b answered the refund case in 11.8 s and declined the unsupported question in 6.5 s after a conversation-context correction. The initial test exposed an irrelevant carry-over answer; that regression remains in the smoke script. These timings miss the PRD latency targets. Desktop browser citation/highlight/feedback checks pass; the mobile override did not apply, so mobile validation is pending.
