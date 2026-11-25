@@ -11,7 +11,7 @@ down:
 db:
 	docker compose up -d --wait db
 
-test: db backend-check frontend-check
+test: db backend-check frontend-check connector-check
 
 backend-check:
 	cd backend && ./mvnw -B verify
@@ -21,3 +21,6 @@ frontend-check:
 
 format:
 	cd backend && ./mvnw spotless:apply
+
+connector-check:
+	node --test connectors/*.test.mjs

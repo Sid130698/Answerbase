@@ -76,6 +76,10 @@ Backend tests use real PostgreSQL: they check Flyway/pgvector bootstrap, JWT sig
 | `infra/` | Container builds and local web proxy |
 | `docs/` | Design index and architecture decisions |
 
+## Folder imports
+
+An incremental [Notion-export folder connector](docs/folder-sync.md) uploads supported files and creates versions for changed content. It uses normal workspace permissions and a private local sync manifest.
+
 ## Target deployment
 
 Frontend: Cloudflare Pages, root `frontend`, build `npm run build`, output `dist`.
@@ -87,7 +91,7 @@ or deployment credentials are configured. The GitHub repository and review PRs a
 
 ## Remaining delivery work
 
-Organization invitations/member administration, lifecycle/retention, a folder connector, workspace settings/PII controls, evaluation and scale/coverage verification remain in progress. Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
+Organization invitations/member administration, lifecycle/retention, workspace settings/PII controls, evaluation and scale/coverage verification remain in progress. Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
 

@@ -15,7 +15,7 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Implemented; browser verified citation → version → highlighted full text and saved feedback. 390px Ask layout subsequently verified in admin slice. |
 | Customer administration | Invitations/approval, workspace members/groups, settings, query log, weekly costs | Query log, weekly usage/cost and group UI implemented; invitations, member UI and settings pending |
 | Feedback | Votes/reasons, unanswered CSV, corrected-answer evaluation queue | Implemented; 19 backend tests, frontend lint/build pass; browser verified filtering/candidate save and 390px admin/Ask layout |
-| Lifecycle/connector | Retention, full deletion, orphan reconciliation, Notion-export folder sync | Pending |
+| Lifecycle/connector | Retention, full deletion, orphan reconciliation, Notion-export folder sync | Incremental folder connector implemented; deletion/retention/orphan reconciliation pending |
 | Security/operations | Rate limits, PII redaction, traces, alerts, provider failures, budgets | Query admission limits, execution leases, expiry warnings and timing traces implemented; PII controls, budgets and monitoring pending |
 | Evaluation | 60 gold questions + 10 adversarial cases, real metric reports, ablations, CI regression gate | Pending; human-written/reviewed gold and 20% grading spot-check require owner participation |
 | Release | Core coverage >=70%, load test 2,000 docs/50,000 chunks, reproducible deployment, license record, README/design notes | Pending |
