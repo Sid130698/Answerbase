@@ -10,7 +10,7 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | Original ingestion | Private originals, PDF/TXT/MD, versions, queue, retries, source preview | PR #2 open; 14 tests locally; desktop/mobile upload verified |
 | Complete ingestion | DOCX/HTML, structure/offsets, batch/drop uploads, unchanged-content dedupe, duplicate signals | Implemented on feature/prd-ingestion; 17 tests pass, frontend lint/build pass; desktop/390px batch upload and processing verified |
 | Document authorization | Named groups, document restrictions, pre-ranking SQL filtering, staff parity | Implemented: shared database access predicate, groups/admin UI; 17 tests pass. Retrieval integration follows in next slice. |
-| Retrieval | Embedding interface, pgvector + FTS, RRF, reranker interface, configurable variants | Pending |
+| Retrieval | Embedding interface, pgvector + FTS, RRF, reranker interface, configurable variants | Implemented; 17 tests pass; live local embedding + cross-encoder smoke passed; scale/ablation benchmarks pending |
 | Answers | Hosted provider, streaming, grounded claims, citation/quote verification + retry/fallback, history | Pending |
 | Source viewer | Citation links, highlighted passages, page/section and updated timestamps | Pending |
 | Customer administration | Invitations/approval, workspace members/groups, settings, query log, weekly costs | Pending |

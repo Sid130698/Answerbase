@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /build
 COPY backend/ ./
-RUN chmod +x mvnw && ./mvnw -B -DskipTests package
+RUN --mount=type=cache,target=/root/.m2 chmod +x mvnw && ./mvnw -B -ntp -DskipTests package
 
 FROM eclipse-temurin:21-jre-jammy AS runtime
 WORKDIR /app

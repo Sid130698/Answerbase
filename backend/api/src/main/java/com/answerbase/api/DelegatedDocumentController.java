@@ -136,6 +136,23 @@ class DelegatedDocumentController {
                 user -> service.chunks(user, workspace, document, version, offset));
     }
 
+    @PostMapping("/{document}/versions/{version}/reindex")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void reindex(
+            @RequestHeader("X-Support-Grant") String grant,
+            @PathVariable UUID workspace,
+            @PathVariable UUID document,
+            @PathVariable UUID version) {
+        delegation.documentOperation(
+                grant,
+                workspace,
+                "reindex",
+                user -> {
+                    service.reindex(user, workspace, document, version);
+                    return null;
+                });
+    }
+
     @PostMapping("/{document}/versions/{version}/retry")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Retry failed extraction (editor/admin)")

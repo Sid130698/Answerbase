@@ -4,7 +4,7 @@ import { request } from '../api'
 import { DocumentPermissions } from './DocumentPermissions'
 import './sources.css'
 
-type Version = { id: string; documentId: string; versionNumber: number; filename: string; mediaType: string; byteSize: number; status: string; error: string | null; createdAt: string }
+type Version = { id: string; documentId: string; versionNumber: number; filename: string; mediaType: string; byteSize: number; status: string; error: string | null; createdAt: string; indexStatus: string; indexedAt: string | null }
 type Document = { id: string; title: string; latest: Version; processedVersionId: string | null }
 type Chunk = { ordinal: number; pageNumber: number | null; startLine: number | null; endLine: number | null; content: string }
 const statusLabel: Record<string, string> = { queued: 'Queued', processing: 'Extracting text', processed: 'Text processed', failed: 'Needs attention' }
@@ -38,7 +38,7 @@ export function Sources({ workspace }: { workspace: Workspace }) {
     request(base).then(response => response.json()).then((rows: Document[]) => { if (active) { setDocuments(rows); setError('') } }).catch(cause => { if (active) setError(problem(cause)) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [base, refresh])
-  const processing = documents.some(doc => ['queued', 'processing'].includes(doc.latest.status))
+  const processing = documents.some(doc => ['queued', 'processing'].includes(doc.latest.status) || (doc.latest.status === 'processed' && ['pending','indexing'].includes(doc.latest.indexStatus)))
   useEffect(() => {
     if (!processing) return
     const timer = setInterval(() => setRefresh(value => value + 1), 3000)
@@ -77,7 +77,7 @@ export function Sources({ workspace }: { workspace: Workspace }) {
     {notice && <p className="source-notice" role="status">{notice}</p>}{uploadResults.length > 0 && <ul className="upload-results" aria-label="Upload results">{uploadResults.map((result, index) => <li key={index}><strong>{result.name}</strong> — {result.status}</li>)}</ul>}
     {canWrite && <div><button className="button secondary" onClick={async () => { try { setDuplicates(await (await request(`${base}/duplicates`)).json()) } catch (cause) { setError(problem(cause)) } }}>Check for duplicates</button>{duplicates && <div role="status">{duplicates.length ? <ul>{duplicates.map((pair, index) => <li key={index}>{pair.title} / {pair.similarTitle}: {pair.kind} ({Math.round(pair.similarity * 100)}% overlap). Review before removing either source.</li>)}</ul> : <p>No potential duplicates found.</p>}</div>}</div>}
     <p className="field-help">Text processing preserves page or line references. Question answering is not available yet.</p>
-    {loading ? <p role="status">Loading sources…</p> : !documents.length ? <div className="sources-empty"><h2>Your knowledge starts here</h2><p>Add your first document to this workspace. Original files remain available for download.</p></div> : <div className="source-table-scroll"><table className="source-table"><caption className="visually-hidden">Documents in {workspace.name}</caption><thead><tr><th>Document</th><th>Latest version</th><th>Processing</th><th>Size</th></tr></thead><tbody>{documents.map(doc => <tr key={doc.id}><td><button className="text-link source-name" onClick={() => selectDocument(doc.id)}>{doc.title}</button></td><td>v{doc.latest.versionNumber}</td><td><span className={`source-status ${doc.latest.status}`}>{statusLabel[doc.latest.status]}</span>{doc.processedVersionId && doc.processedVersionId !== doc.latest.id && <small>Previous processed version available</small>}</td><td>{Math.max(1, Math.ceil(doc.latest.byteSize / 1024))} KB</td></tr>)}</tbody></table></div>}
+    {loading ? <p role="status">Loading sources…</p> : !documents.length ? <div className="sources-empty"><h2>Your knowledge starts here</h2><p>Add your first document to this workspace. Original files remain available for download.</p></div> : <div className="source-table-scroll"><table className="source-table"><caption className="visually-hidden">Documents in {workspace.name}</caption><thead><tr><th>Document</th><th>Latest version</th><th>Processing</th><th>Size</th></tr></thead><tbody>{documents.map(doc => <tr key={doc.id}><td><button className="text-link source-name" onClick={() => selectDocument(doc.id)}>{doc.title}</button></td><td>v{doc.latest.versionNumber}</td><td><span className={`source-status ${doc.latest.status}`}>{doc.latest.indexStatus === 'indexed' ? 'Indexed' : statusLabel[doc.latest.status]}</span>{doc.processedVersionId && doc.processedVersionId !== doc.latest.id && <small>Previous processed version available</small>}</td><td>{Math.max(1, Math.ceil(doc.latest.byteSize / 1024))} KB</td></tr>)}</tbody></table></div>}
     {selected && <DocumentDetail key={selected} base={base} id={selected} canWrite={canWrite} canManage={workspace.role === 'admin'} workspace={workspace.id} refresh={refresh} changed={() => setRefresh(value => value + 1)} />}
   </section>
 }
@@ -98,11 +98,11 @@ function DocumentDetail({ base, id, canWrite, canManage, workspace, refresh, cha
     request(`${base}/${id}/versions/${version.id}/chunks?offset=${offset}`).then(r => r.json()).then((rows: Chunk[]) => { if (active) { setChunks(rows); setReading(false) } }).catch(cause => { if (active) { setError(problem(cause)); setReading(false) } })
     return () => { active = false }
   }, [base, id, version, offset])
-  async function act(action: 'original' | 'retry') {
+  async function act(action: 'original' | 'retry' | 'reindex') {
     if (!version || busy) return
     setBusy(true); setError('')
     try {
-      const response = await request(`${base}/${id}/versions/${version.id}/${action}`, action === 'retry' ? { method: 'POST' } : undefined)
+      const response = await request(`${base}/${id}/versions/${version.id}/${action}`, action !== 'original' ? { method: 'POST' } : undefined)
       if (action === 'original') {
         const url = URL.createObjectURL(await response.blob()); const link = document.createElement('a'); link.href = url; link.download = version.filename; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000)
       } else changed()
@@ -112,6 +112,7 @@ function DocumentDetail({ base, id, canWrite, canManage, workspace, refresh, cha
     {error && <p role="alert" className="source-error">{error}</p>}{!loaded && <p role="status">Loading versions…</p>}
     {canManage && <DocumentPermissions workspace={workspace} document={id} />}
     {version && <><div className="source-detail-tools"><div><label htmlFor="document-version">Version history</label><select id="document-version" value={selectedVersion} onChange={event => { setSelectedVersion(event.target.value); setChunks([]); setOffset(0); setReading(true) }}>{versions.map(value => <option key={value.id} value={value.id}>v{value.versionNumber} · {statusLabel[value.status]} · {new Date(value.createdAt).toLocaleString()}</option>)}</select></div><button className="button secondary" disabled={busy} onClick={() => void act('original')}>Download original</button>{canWrite && version.status === 'failed' && <button className="button primary" disabled={busy} onClick={() => void act('retry')}>Retry processing</button>}</div>
+      {version.status === 'processed' && <p>Search index: {version.indexStatus}{version.indexedAt && ` · ${new Date(version.indexedAt).toLocaleString()}`}. {canWrite && <button className="text-link" disabled={busy || version.indexStatus === 'indexing'} onClick={() => void act('reindex')}>Rebuild index</button>}</p>}
       <p role="status">{statusLabel[version.status]}{version.error && ` — ${version.error}`}</p>
       {version.status === 'processed' && <><h3>Extracted passages</h3>{reading && <p role="status">Loading passages…</p>}{chunks.map(chunk => <article className="source-passage" key={`${version.id}-${chunk.ordinal}`}><p className="field-help">{chunk.pageNumber ? `Page ${chunk.pageNumber}` : `Lines ${chunk.startLine}–${chunk.endLine}`} · Passage {chunk.ordinal + 1}</p><pre>{chunk.content}</pre></article>)}<div className="source-pagination"><button className="button secondary" disabled={offset === 0 || reading} onClick={() => { setReading(true); setOffset(value => Math.max(0, value - 50)) }}>Previous passages</button><button className="button secondary" disabled={chunks.length < 50 || reading} onClick={() => { setReading(true); setOffset(value => value + 50) }}>Next passages</button></div></>}
     </>}

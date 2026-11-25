@@ -127,6 +127,17 @@ class DocumentController {
                 UUID.fromString(jwt.getSubject()), workspace, document, version, offset);
     }
 
+    @PostMapping("/{document}/versions/{version}/reindex")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Rebuild vector and keyword index for a processed version")
+    void reindex(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID workspace,
+            @PathVariable UUID document,
+            @PathVariable UUID version) {
+        service.reindex(UUID.fromString(jwt.getSubject()), workspace, document, version);
+    }
+
     @PostMapping("/{document}/versions/{version}/retry")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Retry failed extraction (editor/admin)")
