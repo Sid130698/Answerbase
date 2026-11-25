@@ -15,6 +15,7 @@ jobs:
     outputs:
       backend: ${{ steps.paths.outputs.backend }}
       frontend: ${{ steps.paths.outputs.frontend }}
+      support-frontend: ${{ steps.paths.outputs.support-frontend }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,9 +35,9 @@ jobs:
               files = subprocess.check_output(['git', 'diff', '--name-only', base, head], text=True).splitlines()
           shared = any(p.startswith(('.github/', 'infra/')) or p in ('compose.yml', '.dockerignore', 'Makefile') for p in files)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              for component in ('backend', 'frontend'):
+              for component in ('backend', 'frontend', 'support-frontend'):
                   changed = shared or any(p.startswith(component + '/') for p in files)
-                  if component == 'frontend' and '.nvmrc' in files:
+                  if component in ('frontend', 'support-frontend') and '.nvmrc' in files:
                       changed = True
                   out.write(f'{component}={str(changed).lower()}\n')
           PYTHON
@@ -82,4 +83,21 @@ jobs:
       - working-directory: frontend
         run: npm ci
       - working-directory: frontend
+        run: npm run lint && npm run build
+
+  support-frontend:
+    needs: changes
+    if: needs.changes.outputs.support-frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: support-frontend/package-lock.json
+      - working-directory: support-frontend
+        run: npm ci
+      - working-directory: support-frontend
         run: npm run lint && npm run build

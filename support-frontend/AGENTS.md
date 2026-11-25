@@ -1,0 +1,3 @@
+# Answerbase internal staff app
+
+Read ../DESIGN.md. This is an independent app, not a component imported into the customer frontend. Keep its package, build, auth storage and deployment separate. Staff login is not customer registration; only explicitly provisioned Answerbase staff qualify. Never infer staff status from an organization role or email suffix. Keep acting-as context and privileged staff repairs visibly separate. Tokens stay in memory (delegation) or this app's session storage (staff session); never send staff credentials into the customer frame. Every cross-frame message must validate exact origin and source. Run lint and build, and test permission boundaries against the API.

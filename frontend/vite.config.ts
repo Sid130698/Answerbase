@@ -5,9 +5,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '127.0.0.1',
+    headers: { 'Content-Security-Policy': "frame-ancestors 'self' http://localhost:5174" },
     port: 5173,
     strictPort: true,
     proxy: {
+      '/swagger-ui': 'http://127.0.0.1:8080',
+      '/v3/api-docs': 'http://127.0.0.1:8080',
       '/api': 'http://127.0.0.1:8080',
       '/actuator': 'http://127.0.0.1:8080',
     },

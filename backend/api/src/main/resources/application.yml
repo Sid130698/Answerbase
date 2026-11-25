@@ -3,6 +3,9 @@ spring:
     name: answerbase-api
   autoconfigure:
     exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  mvc:
+    problemdetails:
+      enabled: true
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:55432/answerbase}
     username: ${DATABASE_USERNAME:answerbase}
@@ -12,6 +15,8 @@ spring:
       minimum-idle: 1
   flyway:
     enabled: true
+    # Keep migration history stable when V1 creates the schema matching the DB user.
+    default-schema: public
     locations: classpath:db/migration
     clean-disabled: true
 server:
@@ -30,3 +35,24 @@ management:
       group:
         readiness:
           include: readinessState,db
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:true}
+    disable-swagger-default-url: true
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+    persist-authorization: false
+  show-actuator: true
+  paths-to-match:
+    - /api/**
+    - /actuator/health
+    - /actuator/health/**
+
+answerbase:
+  auth:
+    issuer: ${SUPABASE_AUTH_ISSUER:}
+    jwk-set-uri: ${SUPABASE_JWKS_URL:}

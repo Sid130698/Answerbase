@@ -24,6 +24,9 @@ services:
       DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-answerbase}
       DATABASE_USERNAME: ${POSTGRES_USER:-answerbase}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-answerbase-local}
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-true}
+      SUPABASE_AUTH_ISSUER: ${SUPABASE_AUTH_ISSUER:-}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
     ports:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     depends_on:
@@ -60,8 +63,27 @@ services:
     build:
       context: .
       dockerfile: infra/docker/frontend.Dockerfile
+      args:
+        VITE_SUPPORT_ORIGIN: ${SUPPORT_ORIGIN:-http://localhost:5174}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
+    environment:
+      SUPPORT_ORIGIN: ${SUPPORT_ORIGIN:-http://localhost:5174}
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-5173}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+  support-frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/support-frontend.Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
+        VITE_CUSTOMER_ORIGIN: ${CUSTOMER_ORIGIN:-http://localhost:5173}
+    ports:
+      - "127.0.0.1:${SUPPORT_FRONTEND_PORT:-5174}:8080"
     depends_on:
       api:
         condition: service_healthy
