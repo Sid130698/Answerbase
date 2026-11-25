@@ -21,3 +21,5 @@ evals/reports/*
 supabase/signing_keys.json
 supabase/.temp/
 supabase/.branches/
+**/__pycache__/
+*.pyc

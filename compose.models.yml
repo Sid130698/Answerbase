@@ -1,0 +1,29 @@
+# Optional all-container local model setup; no public model ingress.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+  reranker:
+    build:
+      context: .
+      dockerfile: models/reranker/Dockerfile
+    volumes:
+      - reranker-models:/home/model/.cache/huggingface
+    mem_limit: 1g
+  api:
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      RERANKER_URL: http://reranker:8092
+      RETRIEVAL_RERANK: 'true'
+    depends_on:
+      ollama:
+        condition: service_started
+      reranker:
+        condition: service_started
+  worker:
+    environment:
+      OLLAMA_URL: http://ollama:11434
+volumes:
+  ollama-models:
+  reranker-models:

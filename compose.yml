@@ -21,6 +21,13 @@ services:
       dockerfile: infra/docker/backend.Dockerfile
       target: api
     environment: &database-environment
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text:latest}
+      RERANKER_URL: ${RERANKER_URL:-http://host.docker.internal:8092}
+      RETRIEVAL_MODE: ${RETRIEVAL_MODE:-hybrid}
+      RETRIEVAL_CANDIDATES: ${RETRIEVAL_CANDIDATES:-30}
+      RETRIEVAL_TOP_K: ${RETRIEVAL_TOP_K:-6}
+      RETRIEVAL_RERANK: ${RETRIEVAL_RERANK:-false}
       DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-answerbase}
       DATABASE_USERNAME: ${POSTGRES_USER:-answerbase}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-answerbase-local}

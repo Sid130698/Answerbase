@@ -84,6 +84,12 @@ public final class IngestionProcessor {
                         jdbc.update(
                                 "UPDATE answerbase.ingestion_jobs SET state='done',lease_token=NULL,lease_until=NULL WHERE version_id=?",
                                 id);
+                        jdbc.update(
+                                "INSERT INTO answerbase.index_jobs(version_id) VALUES (?) ON CONFLICT(version_id) DO UPDATE SET state='queued',attempts=0,available_at=now(),lease_token=NULL,lease_until=NULL,error=NULL",
+                                id);
+                        jdbc.update(
+                                "UPDATE answerbase.document_versions SET index_status='pending' WHERE id=?",
+                                id);
                     });
         } catch (Exception failure) {
             tx.executeWithoutResult(

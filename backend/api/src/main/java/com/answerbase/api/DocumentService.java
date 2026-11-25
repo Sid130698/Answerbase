@@ -23,7 +23,9 @@ class DocumentService {
             int byteSize,
             String status,
             String error,
-            Instant createdAt) {}
+            Instant createdAt,
+            String indexStatus,
+            Instant indexedAt) {}
 
     record Document(UUID id, String title, Version latest, UUID processedVersionId) {}
 
@@ -77,7 +79,11 @@ class DocumentService {
                 rs.getInt("byte_size"),
                 rs.getString("status"),
                 rs.getString("error"),
-                rs.getTimestamp("created_at").toInstant());
+                rs.getTimestamp("created_at").toInstant(),
+                rs.getString("index_status"),
+                rs.getTimestamp("indexed_at") == null
+                        ? null
+                        : rs.getTimestamp("indexed_at").toInstant());
     }
 
     List<Document> list(UUID user, UUID workspace) {
@@ -414,6 +420,18 @@ class DocumentService {
                 v.get("organization_id"),
                 workspace,
                 offset);
+    }
+
+    @Transactional
+    public void reindex(UUID user, UUID workspace, UUID document, UUID id) {
+        var v = version(user, workspace, document, id, true);
+        if (!v.get("status").equals("processed"))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Extract text before indexing");
+        jdbc.update(
+                "INSERT INTO answerbase.index_jobs(version_id) VALUES (?) ON CONFLICT(version_id) DO UPDATE SET state='queued',attempts=0,available_at=now(),lease_token=NULL,lease_until=NULL,error=NULL",
+                id);
+        jdbc.update(
+                "UPDATE answerbase.document_versions SET index_status='pending' WHERE id=?", id);
     }
 
     @Transactional
