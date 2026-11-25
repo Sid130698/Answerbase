@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,20 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class ApiApplicationTests {
     @LocalServerPort int port;
     @Autowired JdbcTemplate jdbc;
+    @Autowired Flyway flyway;
+
+    @Test
+    void migrationHistoryRemainsDiscoverableAfterApplicationSchemaExists() {
+        // PostgreSQL's default "$user" search path now resolves to answerbase.
+        // A new Flyway instance must still find the original public history.
+        var restarted = Flyway.configure().configuration(flyway.getConfiguration()).load();
+        assertThat(restarted.migrate().migrationsExecuted).isZero();
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM public.flyway_schema_history WHERE success",
+                                Integer.class))
+                .isPositive();
+    }
 
     @Test
     void migrationsInstallVectorAndApplicationSchema() {
