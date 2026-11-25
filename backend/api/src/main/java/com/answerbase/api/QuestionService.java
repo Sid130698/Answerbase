@@ -163,19 +163,6 @@ class QuestionService {
                     }
                 }
             }
-            // Recheck evidence immediately before publication in case access was revoked during
-            // generation.
-            workspaces.get(user, workspace);
-            for (var hit : evidence)
-                if (!Boolean.TRUE.equals(
-                        jdbc.queryForObject(
-                                "SELECT answerbase.can_read_document(?,?)",
-                                Boolean.class,
-                                user,
-                                hit.documentId())))
-                    throw new ResponseStatusException(
-                            HttpStatus.FORBIDDEN,
-                            "Source access changed. Ask again with current permissions.");
             if (verified.abstained() && message.isEmpty())
                 message = "I could not find this in the documents.";
             if (!verified.abstained()) message = "";
@@ -196,20 +183,43 @@ class QuestionService {
                             found.options(),
                             "message",
                             message);
+            Object[] publication = {
+                JsonHttp.JSON.writeValueAsString(verified),
+                JsonHttp.JSON.writeValueAsString(evidence),
+                verified.abstained(),
+                model,
+                found.embeddingModel(),
+                input,
+                output,
+                local ? 0.0 : null,
+                JsonHttp.JSON.writeValueAsString(trace),
+                existing,
+                execution
+            };
             int published =
-                    jdbc.update(
-                            "UPDATE answerbase.questions SET status='complete',answer=?::jsonb,evidence=?::jsonb,abstained=?,model=?,embedding_model=?,input_tokens=?,output_tokens=?,cost_usd=?,trace=?::jsonb,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running' AND lease_until>now()",
-                            JsonHttp.JSON.writeValueAsString(verified),
-                            JsonHttp.JSON.writeValueAsString(evidence),
-                            verified.abstained(),
-                            model,
-                            found.embeddingModel(),
-                            input,
-                            output,
-                            local ? 0.0 : null,
-                            JsonHttp.JSON.writeValueAsString(trace),
-                            existing,
-                            execution);
+                    tx.execute(
+                            transaction -> {
+                                // Lifecycle deletion uses FOR UPDATE on this same row; publication
+                                // cannot race it.
+                                jdbc.queryForList(
+                                        "SELECT id FROM answerbase.workspaces WHERE id=? FOR SHARE",
+                                        workspace);
+                                workspaces.get(user, workspace);
+                                for (var hit : evidence)
+                                    if (!Boolean.TRUE.equals(
+                                            jdbc.queryForObject(
+                                                    "SELECT answerbase.can_read_document(?,?)",
+                                                    Boolean.class,
+                                                    user,
+                                                    hit.documentId())))
+                                        throw new ResponseStatusException(
+                                                HttpStatus.FORBIDDEN,
+                                                "Source access changed. Ask again with current permissions.");
+
+                                return jdbc.update(
+                                        "UPDATE answerbase.questions SET status='complete',answer=?::jsonb,evidence=?::jsonb,abstained=?,model=?,embedding_model=?,input_tokens=?,output_tokens=?,cost_usd=?,trace=?::jsonb,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running' AND lease_until>now()",
+                                        publication);
+                            });
             if (published != 1)
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "This attempt expired. Retry the question.");

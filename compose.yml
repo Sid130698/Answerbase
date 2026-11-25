@@ -65,7 +65,7 @@ services:
       target: worker
     environment: *database-environment
     volumes:
-      - document-data:/app/documents:ro
+      - document-data:/app/documents
     depends_on:
       api:
         condition: service_healthy
