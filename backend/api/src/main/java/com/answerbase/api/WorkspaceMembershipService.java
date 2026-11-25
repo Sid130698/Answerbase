@@ -92,6 +92,10 @@ class WorkspaceMembershipService {
         }
         if (role == null) {
             jdbc.update(
+                    "DELETE FROM answerbase.group_members WHERE workspace_id=? AND user_id=?",
+                    workspace,
+                    target);
+            jdbc.update(
                     "DELETE FROM answerbase.workspace_members WHERE organization_id=? AND workspace_id=? AND user_id=?",
                     organization,
                     workspace,

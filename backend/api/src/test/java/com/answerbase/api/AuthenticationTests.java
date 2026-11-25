@@ -667,6 +667,7 @@ class AuthenticationTests {
     }
 
     @org.springframework.beans.factory.annotation.Autowired DocumentService documents;
+    @org.springframework.beans.factory.annotation.Autowired DocumentAccessService documentAccess;
     @org.springframework.beans.factory.annotation.Autowired WorkspaceService workspaceService;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -793,6 +794,43 @@ class AuthenticationTests {
             assertThat(get(base + "/duplicates", userToken(viewer)).statusCode()).isEqualTo(403);
             assertThat(get(versionPath + "/chunks", jwt).body())
                     .contains("startOffset", "endOffset", "sectionPath");
+            var group = documentAccess.create(UUID.fromString(owner), workspace, "HR");
+            documentAccess.policy(
+                    UUID.fromString(owner),
+                    workspace,
+                    document,
+                    new DocumentAccessService.Policy(true, java.util.List.of(group.id())));
+            assertThat(get(versionPath + "/original", userToken(viewer)).statusCode())
+                    .isEqualTo(404);
+            assertThat(get(versionPath + "/chunks", userToken(viewer)).statusCode()).isEqualTo(404);
+            assertThat(get(base, userToken(viewer)).body()).doesNotContain(document.toString());
+            assertThat(get(versionPath + "/original", jwt).statusCode()).isEqualTo(200);
+            assertThat(
+                            get("/api/v1/workspaces/" + workspace + "/groups", userToken(viewer))
+                                    .statusCode())
+                    .isEqualTo(403);
+            assertThatThrownBy(
+                            () ->
+                                    documentAccess.members(
+                                            UUID.fromString(owner),
+                                            workspace,
+                                            group.id(),
+                                            java.util.List.of(UUID.fromString(outsider))))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            documentAccess.members(
+                    UUID.fromString(owner),
+                    workspace,
+                    group.id(),
+                    java.util.List.of(UUID.fromString(viewer)));
+            assertThat(get(versionPath + "/chunks", userToken(viewer)).statusCode()).isEqualTo(200);
+            documentAccess.members(
+                    UUID.fromString(owner), workspace, group.id(), java.util.List.of());
+            assertThat(get(versionPath + "/chunks", userToken(viewer)).statusCode()).isEqualTo(404);
+            documentAccess.policy(
+                    UUID.fromString(owner),
+                    workspace,
+                    document,
+                    new DocumentAccessService.Policy(false, java.util.List.of()));
             // A malformed replacement fails without replacing the usable version.
             var next =
                     upload(
@@ -838,6 +876,10 @@ class AuthenticationTests {
                     jdbc.queryForList(
                             "SELECT storage_key FROM answerbase.document_versions WHERE organization_id=?",
                             org)) documentStorage.delete((String) row.get("storage_key"));
+            jdbc.update(
+                    "DELETE FROM answerbase.document_group_access WHERE organization_id=?", org);
+            jdbc.update("DELETE FROM answerbase.group_members WHERE organization_id=?", org);
+            jdbc.update("DELETE FROM answerbase.document_groups WHERE organization_id=?", org);
             jdbc.update("DELETE FROM answerbase.document_chunks WHERE organization_id=?", org);
             jdbc.update(
                     "DELETE FROM answerbase.ingestion_jobs WHERE version_id IN (SELECT id FROM answerbase.document_versions WHERE organization_id=?)",

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Workspace } from '../workspaces/WorkspaceGate'
-import { supabase } from '../auth/client'
-import { delegatedFetch, supportMode } from '../support/transport'
+import { request } from '../api'
+import { DocumentPermissions } from './DocumentPermissions'
 import './sources.css'
 
 type Version = { id: string; documentId: string; versionNumber: number; filename: string; mediaType: string; byteSize: number; status: string; error: string | null; createdAt: string }
@@ -9,20 +9,6 @@ type Document = { id: string; title: string; latest: Version; processedVersionId
 type Chunk = { ordinal: number; pageNumber: number | null; startLine: number | null; endLine: number | null; content: string }
 const statusLabel: Record<string, string> = { queued: 'Queued', processing: 'Extracting text', processed: 'Text processed', failed: 'Needs attention' }
 const problem = (error: unknown) => error instanceof Error ? error.message : 'Request failed. Please retry.'
-async function request(path: string, init?: RequestInit) {
-  let response: Response
-  if (supportMode) response = await delegatedFetch(path, init)
-  else {
-    const { data } = await supabase!.auth.getSession()
-    if (!data.session) throw new Error('Sign in to continue.')
-    response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1${path}`, { ...init, signal: AbortSignal.timeout(60000), headers: { ...init?.headers, Authorization: `Bearer ${data.session.access_token}` } })
-  }
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    throw new Error(response.status === 413 ? 'Choose a file no larger than 5 MB.' : body?.detail || 'Unable to complete this request. Please retry.')
-  }
-  return response
-}
 function documentId() { return new URLSearchParams(window.location.search).get('document') }
 function selectDocument(id: string | null) {
   const url = new URL(window.location.href)
@@ -92,10 +78,10 @@ export function Sources({ workspace }: { workspace: Workspace }) {
     {canWrite && <div><button className="button secondary" onClick={async () => { try { setDuplicates(await (await request(`${base}/duplicates`)).json()) } catch (cause) { setError(problem(cause)) } }}>Check for duplicates</button>{duplicates && <div role="status">{duplicates.length ? <ul>{duplicates.map((pair, index) => <li key={index}>{pair.title} / {pair.similarTitle}: {pair.kind} ({Math.round(pair.similarity * 100)}% overlap). Review before removing either source.</li>)}</ul> : <p>No potential duplicates found.</p>}</div>}</div>}
     <p className="field-help">Text processing preserves page or line references. Question answering is not available yet.</p>
     {loading ? <p role="status">Loading sources…</p> : !documents.length ? <div className="sources-empty"><h2>Your knowledge starts here</h2><p>Add your first document to this workspace. Original files remain available for download.</p></div> : <div className="source-table-scroll"><table className="source-table"><caption className="visually-hidden">Documents in {workspace.name}</caption><thead><tr><th>Document</th><th>Latest version</th><th>Processing</th><th>Size</th></tr></thead><tbody>{documents.map(doc => <tr key={doc.id}><td><button className="text-link source-name" onClick={() => selectDocument(doc.id)}>{doc.title}</button></td><td>v{doc.latest.versionNumber}</td><td><span className={`source-status ${doc.latest.status}`}>{statusLabel[doc.latest.status]}</span>{doc.processedVersionId && doc.processedVersionId !== doc.latest.id && <small>Previous processed version available</small>}</td><td>{Math.max(1, Math.ceil(doc.latest.byteSize / 1024))} KB</td></tr>)}</tbody></table></div>}
-    {selected && <DocumentDetail key={selected} base={base} id={selected} canWrite={canWrite} refresh={refresh} changed={() => setRefresh(value => value + 1)} />}
+    {selected && <DocumentDetail key={selected} base={base} id={selected} canWrite={canWrite} canManage={workspace.role === 'admin'} workspace={workspace.id} refresh={refresh} changed={() => setRefresh(value => value + 1)} />}
   </section>
 }
-function DocumentDetail({ base, id, canWrite, refresh, changed }: { base: string; id: string; canWrite: boolean; refresh: number; changed: () => void }) {
+function DocumentDetail({ base, id, canWrite, canManage, workspace, refresh, changed }: { base: string; id: string; canWrite: boolean; canManage: boolean; workspace: string; refresh: number; changed: () => void }) {
   const [versions, setVersions] = useState<Version[]>([])
   const [selectedVersion, setSelectedVersion] = useState('')
   const [chunks, setChunks] = useState<Chunk[]>([])
@@ -124,6 +110,7 @@ function DocumentDetail({ base, id, canWrite, refresh, changed }: { base: string
   }
   return <section className="source-detail" aria-label="Document details"><div className="page-heading"><h2>{version?.filename || 'Document details'}</h2><button className="button secondary" onClick={() => selectDocument(null)}>Close details</button></div>
     {error && <p role="alert" className="source-error">{error}</p>}{!loaded && <p role="status">Loading versions…</p>}
+    {canManage && <DocumentPermissions workspace={workspace} document={id} />}
     {version && <><div className="source-detail-tools"><div><label htmlFor="document-version">Version history</label><select id="document-version" value={selectedVersion} onChange={event => { setSelectedVersion(event.target.value); setChunks([]); setOffset(0); setReading(true) }}>{versions.map(value => <option key={value.id} value={value.id}>v{value.versionNumber} · {statusLabel[value.status]} · {new Date(value.createdAt).toLocaleString()}</option>)}</select></div><button className="button secondary" disabled={busy} onClick={() => void act('original')}>Download original</button>{canWrite && version.status === 'failed' && <button className="button primary" disabled={busy} onClick={() => void act('retry')}>Retry processing</button>}</div>
       <p role="status">{statusLabel[version.status]}{version.error && ` — ${version.error}`}</p>
       {version.status === 'processed' && <><h3>Extracted passages</h3>{reading && <p role="status">Loading passages…</p>}{chunks.map(chunk => <article className="source-passage" key={`${version.id}-${chunk.ordinal}`}><p className="field-help">{chunk.pageNumber ? `Page ${chunk.pageNumber}` : `Lines ${chunk.startLine}–${chunk.endLine}`} · Passage {chunk.ordinal + 1}</p><pre>{chunk.content}</pre></article>)}<div className="source-pagination"><button className="button secondary" disabled={offset === 0 || reading} onClick={() => { setReading(true); setOffset(value => Math.max(0, value - 50)) }}>Previous passages</button><button className="button secondary" disabled={chunks.length < 50 || reading} onClick={() => { setReading(true); setOffset(value => value + 50) }}>Next passages</button></div></>}
