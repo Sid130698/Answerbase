@@ -50,6 +50,25 @@ class DelegationService {
     }
 
     @Transactional
+    public <T> T documentOperation(
+            String token,
+            UUID workspace,
+            String action,
+            java.util.function.Function<UUID, T> operation) {
+        var c = resolve(token);
+        workspaces.get(c.target(), workspace);
+        T result = operation.apply(c.target());
+        support.audit(
+                c.actor(),
+                c.session(),
+                c.organization(),
+                c.target(),
+                "delegated.document." + action,
+                "workspace=" + workspace);
+        return result;
+    }
+
+    @Transactional
     public Grant issue(UUID actor, UUID sessionId, UUID target) {
         var session = support.requireSession(actor, sessionId);
         support.requireTarget(session, target);

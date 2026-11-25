@@ -1,3 +1,4 @@
+import { Sources } from './documents/Sources'
 import { useEffect, useState, type ReactNode } from 'react'
 import { WorkspaceGate, type Workspace } from './workspaces/WorkspaceGate'
 import { Icon } from './components/Icon'
@@ -44,17 +45,13 @@ function WorkspaceApp({ workspace, selector }: { workspace: Workspace; selector:
             <div className="composer">
               <label className="visually-hidden" htmlFor="question">Your question</label>
               <textarea id="question" value={question} onChange={event => setQuestion(event.target.value)} placeholder="What would you like to know?" rows={3} aria-describedby="question-help" />
-              <div className="composer-footer"><span><Icon name="book" />No sources connected</span><button className="button primary" disabled aria-describedby="question-help">Ask question <span aria-hidden="true">↑</span></button></div>
+              <div className="composer-footer"><span><Icon name="book" />Workspace sources</span><button className="button primary" disabled aria-describedby="question-help">Ask question <span aria-hidden="true">↑</span></button></div>
             </div>
-            <p className="field-help" id="question-help">Answers will be available once document uploads and search are connected. You can draft a question here.</p>
+            <p className="field-help" id="question-help">Answers will be available once search and answer generation are connected. You can draft a question here.</p>
             <div className="first-step"><div className="step-mark"><Icon name="book" size={22} /></div><div><h2>Start with your team's knowledge</h2><p>Add the documents your team relies on, then ask questions in plain language.</p><a className="text-link" href="#sources">View sources <span aria-hidden="true">→</span></a></div></div>
           </section>
           <aside className="evidence-panel" aria-labelledby="evidence-title"><div className="eyebrow">EVIDENCE</div><h2 id="evidence-title">The source behind the answer</h2><div className="document-symbol" aria-hidden="true"><Icon name="book" size={32} /></div><p>When you ask a question, supporting passages will appear here so you can check the original context.</p><div className="evidence-rule" /><p className="small-note">No answer yet. No sources to cite.</p></aside>
-        </div> : <section className="sources-page" aria-labelledby="sources-title">
-          <div className="page-heading"><div><div className="eyebrow">WORKSPACE KNOWLEDGE</div><h1 id="sources-title">Sources</h1><p>The documents behind your team's answers.</p></div><button className="button primary" disabled aria-describedby="upload-help">+ Add sources</button></div>
-          <p className="preview-note" id="upload-help">Document uploads are not available in this preview yet.</p>
-          <div className="sources-empty"><div className="empty-symbol"><Icon name="book" size={32} /></div><h2>Your knowledge starts here</h2><p>There are no documents in this workspace. Once uploads are connected, this is where you'll add sources and track when they're ready to answer questions.</p><a href="#ask" className="text-link">Back to Ask <span aria-hidden="true">→</span></a></div>
-        </section>}
+        </div> : <Sources workspace={workspace} />}
       </main>
     </div>
   </div>

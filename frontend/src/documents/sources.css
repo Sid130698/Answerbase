@@ -1,0 +1,21 @@
+.source-upload { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 24px; align-items: start; padding: 24px 0; border-block: 1px solid var(--border); margin-bottom: 16px; }
+.source-upload label, .source-detail-tools label { display: block; font-weight: 500; margin-bottom: 8px; }
+.source-upload input, .source-upload select, .source-detail-tools select { max-width: 100%; min-height: 44px; font: inherit; }
+.source-upload select, .source-detail-tools select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--text); }
+.source-upload .button { margin-top: 28px; }
+.source-table-scroll { overflow-x: auto; }
+.source-table { border-collapse: collapse; width: 100%; margin-top: 24px; text-align: left; }
+.source-table th, .source-table td { padding: 16px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.source-table th { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+.source-table small { display: block; margin-top: 4px; color: var(--text-secondary); }
+.source-name { text-align: left; overflow-wrap: anywhere; min-height: 44px; }
+.source-status { color: var(--text-secondary); white-space: nowrap; }.source-status.processed { color: var(--success); }.source-status.failed, .source-error { color: var(--error); }
+.source-notice { color: var(--success); }.source-error, .source-notice { padding: 12px 0; }
+.source-detail { border-top: 2px solid var(--border); margin-top: 32px; padding-top: 24px; }.source-detail h2 { overflow-wrap: anywhere; }
+.source-detail-tools { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }.source-detail-tools > div { max-width: 100%; }
+.source-passage { border-bottom: 1px solid var(--border); padding: 12px 0; }.source-passage pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.7; }
+.source-pagination { display: flex; gap: 12px; margin-top: 24px; }
+@media (max-width: 850px) { .source-upload { grid-template-columns: 1fr; gap: 16px; }.source-upload .button { margin-top: 0; justify-self: start; }.source-table th, .source-table td { padding: 12px 8px; }.source-detail-tools { align-items: start; flex-direction: column; } }
+
+.sources-page .text-link { background: transparent; border: 0; padding: 8px 0; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; }
+.source-upload input::file-selector-button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
