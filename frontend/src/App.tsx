@@ -1,13 +1,14 @@
-import { QueryLog } from './admin/QueryLog'
 import { Ask } from './answers/Ask'
-import { Access } from './admin/Access'
 import { Sources } from './documents/Sources'
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { WorkspaceGate, type Workspace } from './workspaces/WorkspaceGate'
 import { Icon } from './components/Icon'
 import './App.css'
 import { SignOut } from './auth/AuthGate'
 import { useIdentity } from './auth/identity'
+
+const Access=lazy(()=>import('./admin/Access').then(module=>({default:module.Access})))
+const QueryLog=lazy(()=>import('./admin/QueryLog').then(module=>({default:module.QueryLog})))
 
 function currentView() { return window.location.hash === '#queries' ? 'queries' : window.location.hash === '#access' ? 'access' : window.location.hash === '#sources' ? 'sources' : 'ask' }
 
@@ -41,7 +42,7 @@ function WorkspaceApp({ workspace, selector }: { workspace: Workspace; selector:
     <div className="workspace">
       <header className="topbar"><span>{workspace.name} <span aria-hidden="true">/</span> <strong>{view === 'queries' ? 'Questions' : view === 'access' ? 'Access' : view === 'sources' ? 'Sources' : 'Ask'}</strong></span><span className="preview-label">Product preview</span></header>
       <main id="main-content" tabIndex={-1}>
-        {view === 'queries' && workspace.role === 'admin' ? <QueryLog workspace={workspace} /> : view === 'ask' ? <Ask workspace={workspace} /> : view === 'access' && workspace.role === 'admin' ? <Access workspace={workspace} /> : <Sources workspace={workspace} />}
+        <Suspense fallback={<p role="status">Opening workspace view…</p>}>{view === 'queries' && workspace.role === 'admin' ? <QueryLog workspace={workspace} /> : view === 'ask' ? <Ask workspace={workspace} /> : view === 'access' && workspace.role === 'admin' ? <Access workspace={workspace} /> : <Sources workspace={workspace} />}</Suspense>
       </main>
     </div>
   </div>
