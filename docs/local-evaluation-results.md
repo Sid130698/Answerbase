@@ -49,3 +49,9 @@ A rollback-only test inserted 2,000 documents / 50,000 chunks with deterministic
 Model rubric grades and a deterministic 20% human-review sample are generated separately. Same-model judge bias is possible. The first unstructured judge run produced 45 invalid/timeout grading results and is unusable; its partial means must not be reported as quality. The judge now requests a constrained schema and still validates every grade. Human agreement remains unmeasured until a person reviews the sample.
 
 Raw reports are retained locally under `evals/reports/`; compact measured summaries are versioned in `docs/local-results.json`. The candidate baseline under `evals/baselines/` supports local machine-metric comparisons, not a claim of human-approved quality. See `evals/README.md` for exact commands and `prd-checklist.md` for outstanding release gates.
+
+## Experimental rubric grades
+
+The final counted-citation judge run produced 70 schema-valid grades with zero request/format failures: correctness 41/70 (58.57%), faithfulness 60/70 (85.71%), and supported citations 118/142 (83.10%). Citation accuracy is weighted over citations, not averaged over answer percentages. **These are uncalibrated Llama 3.1 judgments, not verified product accuracy.** Inspection found clearly questionable grading: the judge rejected an opening-time answer despite a 09:00–17:00 source range, and penalized an EU-storage answer for not discussing other regions that were not asked about. The model is therefore not a reliable acceptance oracle yet. Neither passing a JSON schema nor running all cases establishes judge reliability.
+
+A deterministic 14-case independent review packet and blank CSV have been generated locally. Machine grades are withheld from the packet. No human review or agreement score has been invented. Use `evals/human-review.mjs` only after a person completes that CSV; calibrate or replace the judge before using its scores to approve a release.

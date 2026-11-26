@@ -1,7 +1,7 @@
 // Optional local rubric grading. These are model grades, not human-verified truth.
 import {readFileSync,writeFileSync,renameSync} from 'node:fs'
 import {createHash} from 'node:crypto'
-import {parseCountedRubricScore} from './rubric.mjs'
+import {parseCountedRubricScore,summarizeRubric} from './rubric.mjs'
 const input=process.argv[2]
 if(!input)throw new Error('Usage: node evals/judge.mjs evals/reports/answer-run.json')
 const sourceText=readFileSync(input,'utf8')
@@ -40,8 +40,7 @@ for(const row of rows){
  report.rows.push(grade);save();console.log(`${report.rows.length}/${rows.length} ${row.id}: ${grade.error||'graded; human review pending'}`)
 }
 const graded=report.rows.filter(r=>!r.error)
-const average=values=>values.length?values.reduce((a,b)=>a+b,0)/values.length:null
-report.summary={graded:graded.length,errors:report.rows.filter(r=>r.error).length,llmJudgeCorrectness:average(graded.map(r=>r.correctness)),llmJudgeFaithfulness:average(graded.map(r=>r.faithfulness)),llmJudgeCitationAccuracy:average(graded.filter(r=>r.citationAccuracy!==null).map(r=>r.citationAccuracy)),humanAgreement:null}
+report.summary=summarizeRubric(report.rows)
 report.reviewSample=graded.map(r=>({id:r.id,order:createHash('sha256').update(source.datasetHash+r.id).digest('hex')})).sort((a,b)=>a.order.localeCompare(b.order)).slice(0,Math.ceil(graded.length*.2)).map(r=>r.id)
 report.completedAt=new Date().toISOString();save()
 writeFileSync(path.replace(/\.json$/,'')+'.review.csv','id,human_correctness_0_or_1,human_faithfulness_0_or_1,human_citation_accuracy_0_to_1,reviewer,notes\n'+report.reviewSample.map(id=>`${id},,,,,`).join('\n')+'\n')

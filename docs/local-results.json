@@ -357,7 +357,7 @@
     "limitation": "Single local request; status events are not answer tokens"
   },
   "permissionProbe": {
-    "testedAt": "2026-11-26T02:46:09.983Z",
+    "testedAt": "2026-11-26T04:44:55.477Z",
     "adminRetrievedCanary": true,
     "viewerRetrievalExcludedCanary": true,
     "viewerOriginalDenied": 404,
@@ -375,5 +375,36 @@
       "humanAgreement": null
     },
     "status": "Unusable: 45 grading failures. Partial means are not quality scores."
+  },
+  "rubricJudge": {
+    "model": "llama3.1:8b",
+    "rubricVersion": 4,
+    "completedAt": "2026-11-26T04:44:19.305Z",
+    "summary": {
+      "graded": 70,
+      "errors": 0,
+      "llmJudgeCorrectness": 0.5857142857142857,
+      "llmJudgeFaithfulness": 0.8571428571428571,
+      "llmJudgeCitationAccuracy": 0.8309859154929577,
+      "humanAgreement": null
+    },
+    "reviewSample": [
+      "adversarial-03",
+      "comparison-01",
+      "fact-16",
+      "unanswerable-10",
+      "fact-12",
+      "synthesis-03",
+      "synthesis-02",
+      "table-04",
+      "comparison-05",
+      "fact-05",
+      "unanswerable-06",
+      "comparison-02",
+      "adversarial-02",
+      "fact-08"
+    ],
+    "reviewStatus": "Human spot-check pending; same-family judge bias possible",
+    "reliability": "Uncalibrated: observed spurious failures on simple facts (opening hours and EU storage). Do not interpret the model means as verified accuracy."
   }
 }

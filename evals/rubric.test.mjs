@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {parseRubricScore,parseCountedRubricScore} from './rubric.mjs'
+import {parseRubricScore,parseCountedRubricScore,summarizeRubric} from './rubric.mjs'
 test('rubric rejects out-of-range grades and missing citation grades instead of inflating averages',()=>{
  const grade={correctness:1,faithfulness:0,citationAccuracy:.5,reason:'One citation does not support the claim.'}
  assert.deepEqual(parseRubricScore(JSON.stringify(grade),true),grade)
@@ -15,4 +15,10 @@ test('citation accuracy is calculated from bounded integer counts, never an inve
  assert.throws(()=>parseCountedRubricScore(raw,1),/Invalid/)
  assert.throws(()=>parseCountedRubricScore(raw.replace('"supportedCitations":2','"supportedCitations":0.8'),3),/Invalid/)
  assert.equal(parseCountedRubricScore(raw.replace('"supportedCitations":2','"supportedCitations":0'),0).citationAccuracy,null)
+})
+
+test('aggregate citation accuracy counts citations, not the average of answer percentages',()=>{
+ const result=summarizeRubric([{correctness:1,faithfulness:1,supportedCitations:1,totalCitations:1},{correctness:0,faithfulness:0,supportedCitations:0,totalCitations:3},{error:'provider unavailable'}])
+ assert.equal(result.llmJudgeCitationAccuracy,.25);assert.equal(result.llmJudgeCorrectness,.5);assert.equal(result.errors,1);assert.equal(result.humanAgreement,null)
+ assert.equal(summarizeRubric([]).llmJudgeCitationAccuracy,null)
 })

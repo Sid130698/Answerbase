@@ -13,3 +13,10 @@ export function parseCountedRubricScore(raw, totalCitations) {
   const grade=parseRubricScore(JSON.stringify({...value,citationAccuracy:totalCitations?value.supportedCitations/totalCitations:null}),totalCitations>0)
   return {...grade,supportedCitations:value.supportedCitations,totalCitations}
 }
+
+export function summarizeRubric(rows) {
+  const graded=rows.filter(r=>!r.error)
+  const mean=values=>values.length?values.reduce((a,b)=>a+b,0)/values.length:null
+  const total=graded.reduce((s,r)=>s+r.totalCitations,0)
+  return {graded:graded.length,errors:rows.length-graded.length,llmJudgeCorrectness:mean(graded.map(r=>r.correctness)),llmJudgeFaithfulness:mean(graded.map(r=>r.faithfulness)),llmJudgeCitationAccuracy:total?graded.reduce((s,r)=>s+r.supportedCitations,0)/total:null,humanAgreement:null}
+}

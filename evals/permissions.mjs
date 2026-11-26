@@ -15,6 +15,8 @@ async function api(token,path,init={}){const response=await request(token,path,i
 const json=body=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
 const viewerId=(await api(viewer,'/me')).id
 const path=`/workspaces/${source.workspace}`
+const workspace=await api(owner,path)
+if(!workspace.name.startsWith('Evaluation ')||workspace.role!=='admin'||!source.authorship?.startsWith('AI-authored candidates'))throw new Error('Only runner-created evaluation workspaces are permitted')
 const prior=(await api(owner,path+'/members')).find(m=>m.userId===viewerId)
 if(prior&&prior.role!=='viewer')throw new Error('Use a viewer fixture; existing roles are not changed')
 let version,added=false
