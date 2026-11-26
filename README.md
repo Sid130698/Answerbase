@@ -59,7 +59,7 @@ Java variables. The frontend API base URL is configured with `VITE_API_BASE_URL`
 make test
 ```
 
-This starts the local database, runs `./mvnw verify` from `backend/`, and runs frontend lint/typecheck/build.
+This creates the separate `answerbase_test` database if absent, runs `./mvnw verify`, enforces shared-core line coverage >=70%, and checks both frontends, the connector, and evaluation contracts. Python 3 is required for the coverage gate. Tests do not reset the application database. For direct Maven test runs, first run `make test-db`; CI provisions its own test database. Override `TEST_DATABASE_URL`, `TEST_DATABASE_USERNAME` and `TEST_DATABASE_PASSWORD` only with a dedicated test database.
 Backend tests use real PostgreSQL: they check Flyway/pgvector bootstrap, JWT signature and claim validation, and default-deny route authorization.
 `make format` applies Java formatting. CI runs the same checks on Java 21 and Node 24, selecting frontend/backend jobs from changed paths.
 
@@ -72,7 +72,7 @@ Backend tests use real PostgreSQL: they check Flyway/pgvector bootstrap, JWT sig
 | `backend/worker/` | Isolated background-processing application |
 | `backend/core/` | Shared domain primitives; no API/worker dependencies |
 | `backend/migrations/` | Single source of versioned database migrations |
-| `evals/` | Evaluation plan; runner and gold dataset are not implemented |
+| `evals/` | Local candidate corpus, evaluation runner, metric/regression contracts |
 | `infra/` | Container builds and local web proxy |
 | `docs/` | Design index and architecture decisions |
 
@@ -95,7 +95,7 @@ or deployment credentials are configured. The GitHub repository and review PRs a
 
 ## Remaining delivery work
 
-Evaluation and scale/coverage verification remain in progress. Workspace model/retrieval settings, limited prompt masking and daily request budgets are documented in [workspace settings](docs/workspace-settings.md). Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
+Shared-core coverage is measured at 77.72% (558/718 lines). Evaluation and scale verification remain in progress; see [the local evaluation instructions](evals/README.md). Workspace model/retrieval settings, limited prompt masking and daily request budgets are documented in [workspace settings](docs/workspace-settings.md). Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
 

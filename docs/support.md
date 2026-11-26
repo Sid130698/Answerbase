@@ -32,7 +32,7 @@ Start a company-scoped support session with a ticket reference/reason (30-minute
 
 The parent sends the grant through `postMessage` with an exact target origin. Both applications verify exact origin and window source. The iframe never receives a staff JWT. It holds the grant only in memory and does not initialize a normal customer Supabase session. Tokens never appear in iframe URLs, persistent customer storage, or audit details.
 
-Delegated endpoints revalidate grant validity, session expiry/closure, active staff access, and the target user's organization on every request. They call the same customer workspace domain services. A member cannot create a workspace inside the frame merely because staff can repair access outside it. The current delegated allowlist covers identity and workspace list/read/create; new customer features must explicitly extend this surface with corresponding authorization and audit tests.
+Delegated endpoints revalidate grant validity, session expiry/closure, active staff access, and the target user's organization on every request. They call the same customer workspace domain services. A member cannot create a workspace inside the frame merely because staff can repair access outside it. The delegated allowlist now covers workspace, document, retrieval, answer, member, invitation and settings operations; each route explicitly validates the grant and records its operation. Future features must extend this surface with corresponding authorization and audit tests.
 
 Staff repair endpoints separately enforce the support-session organization and existing-user membership. They preserve the same cross-company foreign keys and last-workspace-admin invariant as customer APIs. A customer organization role is never changed by selecting a user or issuing a grant.
 
@@ -54,7 +54,7 @@ docker compose up --build -d --wait
 
 For separate servers, set customer build `VITE_SUPPORT_ORIGIN` and customer nginx `SUPPORT_ORIGIN` to the exact HTTPS staff origin. Set staff build `VITE_CUSTOMER_ORIGIN` to the exact HTTPS customer origin. Keep them different origins. Point nginx `CUSTOMER_API_UPSTREAM` / `SUPPORT_API_UPSTREAM` at the API reachable by each server. Restrict upstream ingress as appropriate to the deployment. Customer CSP allows framing only from its configured staff origin; staff CSP prohibits framing. Vite development CSP is configured for the local ports; change it explicitly for a different development origin.
 
-SSO, company-domain enrollment and tenant-hostname routing are future authentication/enrollment adapters, not authorization signals. Staff SSO must still resolve a provisioned active staff account. Customer SSO must resolve a customer account. This implementation does not add production SSO, staff MFA enrollment, customer approval UX, document ingestion or password-reset controls.
+SSO, company-domain enrollment and tenant-hostname routing are future authentication/enrollment adapters, not authorization signals. Staff SSO must still resolve a provisioned active staff account. Customer SSO must resolve a customer account. Production SSO and staff MFA enrollment remain future work. Customer invitations, document ingestion and customer password recovery are implemented separately.
 
 ## Verification
 

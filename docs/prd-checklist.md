@@ -17,10 +17,12 @@ Work proceeds on feature branches with tests after each slice, then PR review an
 | Feedback | Votes/reasons, unanswered CSV, corrected-answer evaluation queue | Implemented; 19 backend tests, frontend lint/build pass; browser verified filtering/candidate save and 390px admin/Ask layout |
 | Lifecycle/connector | Retention, full deletion, orphan reconciliation, Notion-export folder sync | Incremental folder connector, deletion outbox, opt-in retention and local orphan reconciliation implemented; remote inventory reconciliation pending hosted setup |
 | Security/operations | Rate limits, PII redaction, traces, alerts, provider failures, budgets | Query limits/leases, expiry warnings, timing traces, pattern-based generation prompt masking and daily request budgets implemented; production monitoring and comprehensive privacy review pending |
-| Evaluation | 60 gold questions + 10 adversarial cases, real metric reports, ablations, CI regression gate | Pending; human-written/reviewed gold and 20% grading spot-check require owner participation |
-| Release | Core coverage >=70%, load test 2,000 docs/50,000 chunks, reproducible deployment, license record, README/design notes | Pending |
+| Evaluation | 60 gold questions + 10 adversarial cases, real metric reports, ablations, CI regression gate | Local runner, 60 AI-authored candidates + 10 adversarial cases, five retrieval variants and regression-gate contract tests implemented. Full answer run in progress. Human-reviewed gold, 20% grading and a trusted live-quality CI job remain pending. |
+| Release | Core coverage >=70%, load test 2,000 docs/50,000 chunks, reproducible deployment, license record, README/design notes | 23 backend tests pass; core coverage 77.72%; both frontend builds pass. Synthetic 2,000-document/50,000-chunk SQL probe passed (762ms vector, 114ms keyword), not full ingestion/concurrency load. Local bootstrap, component record and runtime diagram saved. Full license audit and hosted verification pending. |
 | External proof | Public URL with two workspaces, demo video, write-up, five external testers/three quotes, pilot follow-up | External evidence required; do not fabricate testers, quotes, live results or deployment |
 
 Quality targets: hit@5 >=90%; correctness >=85%; citation accuracy >=95%; unanswerable abstention >=90%; false abstention <10%; p50 <4s / p95 <8s complete answer, first stream <1.5s; cost <$0.03/answered query. Report actual misses openly. Hosting and live provider verification depend on supplied accounts; no paid services without explicit budget.
 
 Owner update: no hosted accounts yet. Prepare and verify local setup first; hosted deployment/live Groq results remain pending.
+
+Local evidence: `docs/local-results.json`, `docs/local-operations.md`, `evals/README.md`. Existing PRs #2–#13 show all checks passing as of 2026-11-26; they remain open for review, not merged.
