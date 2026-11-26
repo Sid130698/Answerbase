@@ -38,6 +38,7 @@ public final class SupabaseDocumentStorage implements DocumentStorage {
         try {
             var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             try (var stream = response.body()) {
+                if (method.equals("DELETE") && response.statusCode() == 404) return new byte[0];
                 if (response.statusCode() < 200 || response.statusCode() >= 300)
                     throw new IOException(
                             "Private storage request failed: HTTP " + response.statusCode());

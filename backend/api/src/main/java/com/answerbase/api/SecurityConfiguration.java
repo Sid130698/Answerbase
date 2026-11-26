@@ -130,6 +130,13 @@ class SecurityConfiguration {
                                             "/api/v1/workspaces/*/usage",
                                             "/api/v1/workspaces/*/unanswered.csv")
                                     .authenticated();
+                            requests.requestMatchers(
+                                            HttpMethod.DELETE, "/api/v1/workspaces/*/documents/*")
+                                    .authenticated();
+                            requests.requestMatchers(
+                                            "/api/v1/workspaces/*/retention",
+                                            "/api/v1/workspaces/*/deletions")
+                                    .authenticated();
                             requests.requestMatchers("/api/v1/support/**").authenticated();
                             // Opaque, scoped support grants are verified inside the delegated
                             // service.

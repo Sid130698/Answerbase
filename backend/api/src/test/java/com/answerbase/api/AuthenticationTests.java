@@ -1093,6 +1093,149 @@ class AuthenticationTests {
                     UUID.fromString(viewer));
             assertThat(get(versionPath + "/original", userToken(viewer)).statusCode())
                     .isEqualTo(404);
+            var originalKeys =
+                    jdbc.queryForList(
+                            "SELECT storage_key FROM answerbase.document_versions WHERE document_id=?",
+                            String.class,
+                            document);
+            var orphanRoot = java.nio.file.Files.createTempDirectory("answerbase-orphans-");
+            var orphanStorage = new com.answerbase.core.documents.LocalDocumentStorage(orphanRoot);
+            String orphanKey =
+                    "organizations/"
+                            + org
+                            + "/workspaces/"
+                            + workspace
+                            + "/documents/"
+                            + UUID.randomUUID()
+                            + "/versions/"
+                            + UUID.randomUUID()
+                            + "/original";
+            try {
+                orphanStorage.put(orphanKey, new byte[] {1}, "text/plain");
+                orphanStorage.put(originalKeys.getFirst(), new byte[] {2}, "text/plain");
+                var oldTime =
+                        java.nio.file.attribute.FileTime.from(
+                                java.time.Instant.now().minus(java.time.Duration.ofDays(8)));
+                java.nio.file.Files.setLastModifiedTime(orphanRoot.resolve(orphanKey), oldTime);
+                java.nio.file.Files.setLastModifiedTime(
+                        orphanRoot.resolve(originalKeys.getFirst()), oldTime);
+                var orphanWorker =
+                        new com.answerbase.core.documents.ObjectDeletionProcessor(
+                                jdbc,
+                                new org.springframework.transaction.support.TransactionTemplate(
+                                        transactionManager),
+                                orphanStorage);
+                assertThat(orphanWorker.reconcileLocal()).isEqualTo(1);
+                var unavailableStorage =
+                        new com.answerbase.core.documents.DocumentStorage() {
+                            public void put(String key, byte[] bytes, String type) {}
+
+                            public byte[] get(String key) {
+                                return new byte[0];
+                            }
+
+                            public void delete(String key) throws java.io.IOException {
+                                throw new java.io.IOException("test storage outage");
+                            }
+                        };
+                new com.answerbase.core.documents.ObjectDeletionProcessor(
+                                jdbc,
+                                new org.springframework.transaction.support.TransactionTemplate(
+                                        transactionManager),
+                                unavailableStorage)
+                        .processOne();
+                assertThat(
+                                jdbc.queryForObject(
+                                        "SELECT attempts FROM answerbase.object_deletions WHERE storage_key=?",
+                                        Integer.class,
+                                        orphanKey))
+                        .isEqualTo(1);
+                jdbc.update(
+                        "UPDATE answerbase.object_deletions SET available_at=now() WHERE storage_key=?",
+                        orphanKey);
+                assertThat(orphanWorker.processOne()).isTrue();
+                assertThatThrownBy(() -> orphanStorage.get(orphanKey))
+                        .isInstanceOf(java.io.IOException.class);
+                assertThat(orphanStorage.get(originalKeys.getFirst())).containsExactly((byte) 2);
+            } finally {
+                try (var paths = java.nio.file.Files.walk(orphanRoot)) {
+                    for (var path : paths.sorted(java.util.Comparator.reverseOrder()).toList())
+                        java.nio.file.Files.deleteIfExists(path);
+                }
+            }
+            assertThat(send("DELETE", base + "/" + document, userToken(viewer), null).statusCode())
+                    .isIn(403, 404);
+            assertThat(send("DELETE", base + "/" + document, jwt, null).statusCode())
+                    .isEqualTo(202);
+            assertThat(get(versionPath + "/original", jwt).statusCode()).isEqualTo(404);
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.document_chunks WHERE version_id=?",
+                                    Integer.class,
+                                    version))
+                    .isZero();
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.questions WHERE workspace_id=?",
+                                    Integer.class,
+                                    workspace))
+                    .isZero();
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.object_deletions WHERE workspace_id=?",
+                                    Integer.class,
+                                    workspace))
+                    .isEqualTo(originalKeys.size());
+            var deletionWorker =
+                    new com.answerbase.core.documents.ObjectDeletionProcessor(
+                            jdbc,
+                            new org.springframework.transaction.support.TransactionTemplate(
+                                    transactionManager),
+                            documentStorage);
+            for (int attempt = 0; attempt < 20 && deletionWorker.processOne(); attempt++) {}
+            for (String originalKey : originalKeys)
+                assertThatThrownBy(() -> documentStorage.get(originalKey))
+                        .isInstanceOf(java.io.IOException.class);
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.object_deletions WHERE workspace_id=?",
+                                    Integer.class,
+                                    workspace))
+                    .isZero();
+            var retainedUpload =
+                    upload(
+                            base,
+                            jwt,
+                            UUID.randomUUID(),
+                            "expired.md",
+                            "# Expired\nOld synthetic fixture.");
+            UUID retainedDoc =
+                    UUID.fromString(
+                            mapper.readTree(retainedUpload.body()).path("documentId").asText());
+            jdbc.update(
+                    "UPDATE answerbase.document_versions SET created_at=now()-interval '20 days' WHERE document_id=?",
+                    retainedDoc);
+            assertThat(
+                            send(
+                                            "PUT",
+                                            "/api/v1/workspaces/" + workspace + "/retention",
+                                            jwt,
+                                            "{\"documentDays\":10,\"questionDays\":0}")
+                                    .statusCode())
+                    .isEqualTo(200);
+            var lifecycle =
+                    new com.answerbase.core.documents.DocumentLifecycle(
+                            jdbc,
+                            new org.springframework.transaction.support.TransactionTemplate(
+                                    transactionManager));
+            lifecycle.retain();
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.documents WHERE id=?",
+                                    Integer.class,
+                                    retainedDoc))
+                    .isZero();
+            for (int attempt = 0; attempt < 20 && deletionWorker.processOne(); attempt++) {}
         } finally {
             for (var row :
                     jdbc.queryForList(

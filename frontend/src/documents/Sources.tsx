@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Workspace } from '../workspaces/WorkspaceGate'
 import { request } from '../api'
+import { DeleteDocument } from './DeleteDocument'
 import { DocumentPermissions } from './DocumentPermissions'
 import './sources.css'
 
@@ -110,7 +111,7 @@ function DocumentDetail({ base, id, canWrite, canManage, workspace, refresh, cha
       } else changed()
     } catch (cause) { setError(problem(cause)) } finally { setBusy(false) }
   }
-  return <section className="source-detail" aria-label="Document details"><div className="page-heading"><h2>{version?.filename || 'Document details'}</h2><button className="button secondary" onClick={() => selectDocument(null)}>Close details</button></div>
+  return <section className="source-detail" aria-label="Document details"><div className="page-heading"><h2>{version?.filename || 'Document details'}</h2><button className="button secondary" onClick={() => selectDocument(null)}>Close details</button></div>{canWrite&&<DeleteDocument path={`${base}/${id}`} removed={()=>{selectDocument(null);changed()}}/>}
     {error && <p role="alert" className="source-error">{error}</p>}{!loaded && <p role="status">Loading versions…</p>}
     {canManage && <DocumentPermissions workspace={workspace} document={id} />}
     {version && <><div className="source-detail-tools"><div><label htmlFor="document-version">Version history</label><select id="document-version" value={selectedVersion} onChange={event => { setSelectedVersion(event.target.value); setSourceText(null); setChunks([]); setOffset(0); setReading(true) }}>{versions.map(value => <option key={value.id} value={value.id}>v{value.versionNumber} · {statusLabel[value.status]} · {new Date(value.createdAt).toLocaleString()}</option>)}</select></div><button className="button secondary" disabled={busy} onClick={() => void act('original')}>Download original</button>{canWrite && version.status === 'failed' && <button className="button primary" disabled={busy} onClick={() => void act('retry')}>Retry processing</button>}</div>

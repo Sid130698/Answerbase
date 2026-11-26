@@ -38,6 +38,27 @@ public final class LocalDocumentStorage implements DocumentStorage {
         }
     }
 
+    /** Reconciliation is local-only; never follows symlinked files or directories. */
+    public java.util.List<String> staleKeys(java.time.Duration age) throws IOException {
+        if (!Files.exists(root)) return java.util.List.of();
+        long cutoff = System.currentTimeMillis() - age.toMillis();
+        try (var paths = Files.walk(root)) {
+            return paths.filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
+                    .filter(
+                            p -> {
+                                try {
+                                    return Files.getLastModifiedTime(p, LinkOption.NOFOLLOW_LINKS)
+                                                    .toMillis()
+                                            < cutoff;
+                                } catch (IOException ignored) {
+                                    return false;
+                                }
+                            })
+                    .map(p -> root.relativize(p).toString().replace('\\', '/'))
+                    .toList();
+        }
+    }
+
     public void delete(String key) throws IOException {
         Files.deleteIfExists(path(key));
     }
