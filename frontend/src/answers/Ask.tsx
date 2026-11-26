@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Workspace } from "../workspaces/WorkspaceGate";
 import { request } from "../api";
 import "./ask.css";
+import { readEvents } from "./events";
 type Citation = { passageId: string; quote: string };
 type Claim = { text: string; citations: Citation[] };
 type Evidence = {
@@ -29,10 +30,13 @@ type Answer = {
 };
 type History = { id: string; question: string; status: string };
 function initialConversation() {
-  return (
-    new URLSearchParams(location.search).get("conversation") ||
-    crypto.randomUUID()
-  );
+  const value = new URLSearchParams(location.search).get("conversation");
+  return value &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+    ? value
+    : crypto.randomUUID();
 }
 export function Ask({ workspace }: { workspace: Workspace }) {
   const [conversation, setConversation] = useState(initialConversation),
@@ -47,7 +51,21 @@ export function Ask({ workspace }: { workspace: Workspace }) {
     [draft, setDraft] = useState<Claim[]>([]),
     [feedback, setFeedback] = useState(""),
     [reason, setReason] = useState("wrong"),
-    [note, setNote] = useState("");
+    [note, setNote] = useState(""),
+    [reportOpen, setReportOpen] = useState(false),
+    [feedbackBusy, setFeedbackBusy] = useState(false),
+    [historyLoading, setHistoryLoading] = useState(true);
+  const stream = useRef<AbortController | null>(null);
+  const feedbackRequest = useRef<AbortController | null>(null);
+  const answerRequest = useRef<AbortController | null>(null);
+  function resetFeedback() {
+    feedbackRequest.current?.abort();
+    setFeedbackBusy(false);
+    setFeedback("");
+    setReason("wrong");
+    setNote("");
+    setReportOpen(false);
+  }
   const key = useRef(crypto.randomUUID());
   const active = useRef(true);
   const base = `/workspaces/${workspace.id}/questions`;
@@ -55,34 +73,48 @@ export function Ask({ workspace }: { workspace: Workspace }) {
     active.current = true;
     return () => {
       active.current = false;
+      stream.current?.abort();
+      feedbackRequest.current?.abort();
+      answerRequest.current?.abort();
     };
   }, []);
   useEffect(() => {
+    const controller = new AbortController();
     const url = new URL(location.href);
     url.searchParams.set("conversation", conversation);
     historyReplace(url);
-    request(`${base}?conversation=${conversation}`)
+    request(`${base}?conversation=${conversation}`, {
+      signal: controller.signal,
+    })
       .then((r) => r.json())
       .then((rows) => {
-        if (active.current) setHistory(rows);
+        if (!controller.signal.aborted) setHistory(rows);
       })
       .catch((e) => {
-        if (active.current) setError(e.message);
+        if (!controller.signal.aborted) setError(e.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setHistoryLoading(false);
       });
+    return () => controller.abort();
   }, [base, conversation, refresh]);
   async function ask(e: React.FormEvent) {
     e.preventDefault();
     if (busy || !question.trim()) return;
+    answerRequest.current?.abort();
+    const controller = new AbortController();
+    stream.current = controller;
     setBusy(true);
     setDraft([]);
     setError("");
     setAnswer(null);
     setSelected(null);
-    setFeedback("");
+    resetFeedback();
     setStatus("Searching your workspace…");
     try {
       const response = await request(`${base}/stream`, {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requestKey: key.current,
@@ -90,48 +122,22 @@ export function Ask({ workspace }: { workspace: Workspace }) {
           question,
         }),
       });
-      if (!response.body)
-        throw new Error("Streaming is not available in this browser.");
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let pending = "";
       let completed = false;
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        pending += decoder.decode(value, { stream: true });
-        let boundary: number;
-        while ((boundary = pending.indexOf("\n\n")) >= 0) {
-          const event = pending.slice(0, boundary);
-          pending = pending.slice(boundary + 2);
-          const kind = event
-            .split("\n")
-            .find((l) => l.startsWith("event:"))
-            ?.slice(6)
-            .trim();
-          const data = event
-            .split("\n")
-            .filter((l) => l.startsWith("data:"))
-            .map((l) => l.slice(5))
-            .join("\n");
-          if (!data) continue;
-          const parsed = JSON.parse(data);
-          if (!active.current) {
-            await reader.cancel();
-            return;
-          }
-          if (kind === "status") setStatus(parsed.message);
-          if (kind === "failure") throw new Error(parsed.message);
-          if (kind === "claim") setDraft((previous) => [...previous, parsed]);
-          if (kind === "answer") {
-            setDraft([]);
-            setAnswer(parsed);
-            completed = true;
-            setStatus("");
-            key.current = crypto.randomUUID();
-          }
+      await readEvents(response, (kind, data) => {
+        if (controller.signal.aborted) return;
+        if (kind === "status") setStatus((data as { message: string }).message);
+        if (kind === "failure")
+          throw new Error((data as { message: string }).message);
+        if (kind === "claim")
+          setDraft((previous) => [...previous, data as Claim]);
+        if (kind === "answer") {
+          setDraft([]);
+          setAnswer(data as Answer);
+          completed = true;
+          setStatus("");
+          key.current = crypto.randomUUID();
         }
-      }
+      });
       if (!completed)
         throw new Error(
           "The connection ended before the answer completed. Retry or check recent questions.",
@@ -142,33 +148,43 @@ export function Ask({ workspace }: { workspace: Workspace }) {
     } finally {
       if (active.current) {
         setBusy(false);
+        setHistoryLoading(true);
         setRefresh((v) => v + 1);
       }
     }
   }
   const evidence = answer?.evidence.find((p) => p.id === selected?.passageId);
   async function vote(value: number) {
-    if (!answer) return;
+    if (!answer || feedbackBusy) return;
+    const controller = new AbortController();
+    feedbackRequest.current = controller;
+    setFeedbackBusy(true);
     try {
       await request(`${base}/${answer.id}/feedback`, {
+        signal: controller.signal,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vote: value,
           reason: value < 0 ? reason : null,
-          note,
+          note: value < 0 ? note : "",
         }),
       });
-      setFeedback("Feedback saved.");
+      if (!controller.signal.aborted) {
+        setFeedback("Feedback saved.");
+        setReportOpen(false);
+      }
     } catch (e) {
-      setFeedback(e instanceof Error ? e.message : "Could not save feedback");
+      if (!controller.signal.aborted)
+        setFeedback(e instanceof Error ? e.message : "Could not save feedback");
+    } finally {
+      if (!controller.signal.aborted) setFeedbackBusy(false);
     }
   }
   return (
     <div className="ask-layout">
       <section className="question-space">
-        <div className="eyebrow">ASK YOUR KNOWLEDGE</div>
-        <h1>Answers with evidence.</h1>
+        <h1>Ask a question</h1>
         <p className="intro">
           Ask about the documents you can access in {workspace.name}.
         </p>
@@ -255,36 +271,90 @@ export function Ask({ workspace }: { workspace: Workspace }) {
                 </ul>
               </>
             )}
+            {!answer.answer.abstained && (
+              <ul className="answer-sources" aria-label="Sources used">
+                {answer.evidence
+                  .filter((p) =>
+                    answer.answer.claims.some((c) =>
+                      c.citations.some(
+                        (citation) => citation.passageId === p.id,
+                      ),
+                    ),
+                  )
+                  .filter(
+                    (p, i, sources) =>
+                      sources.findIndex(
+                        (source) => source.versionId === p.versionId,
+                      ) === i,
+                  )
+                  .map((p) => (
+                    <li key={p.versionId}>
+                      <button
+                        className="text-link"
+                        onClick={() =>
+                          setSelected({ passageId: p.id, quote: "" })
+                        }
+                      >
+                        {p.title}
+                      </button>
+                      <span>
+                        {" "}
+                        · Updated {new Date(p.updatedAt).toLocaleDateString()}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
             <div className="answer-feedback">
               <h3>Was this useful?</h3>
-              <button className="button secondary" onClick={() => void vote(1)}>
-                Helpful
-              </button>
-              <label htmlFor="feedback-reason">What needs improving?</label>
-              <select
-                id="feedback-reason"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              >
-                {["wrong", "outdated", "incomplete", "bad citation"].map(
-                  (r) => (
-                    <option key={r}>{r}</option>
-                  ),
-                )}
-              </select>
-              <label htmlFor="feedback-note">Optional detail</label>
-              <input
-                id="feedback-note"
-                value={note}
-                maxLength={2000}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <button
-                className="button secondary"
-                onClick={() => void vote(-1)}
-              >
-                Report a problem
-              </button>
+              <div className="feedback-actions">
+                <button
+                  className="button secondary"
+                  disabled={feedbackBusy}
+                  onClick={() => void vote(1)}
+                >
+                  Helpful
+                </button>
+                <button
+                  className="button secondary"
+                  disabled={feedbackBusy}
+                  aria-expanded={reportOpen}
+                  aria-controls="feedback-details"
+                  onClick={() => setReportOpen((v) => !v)}
+                >
+                  Not helpful
+                </button>
+              </div>
+              {reportOpen && (
+                <div id="feedback-details" className="feedback-details">
+                  <label htmlFor="feedback-reason">What needs improving?</label>
+                  <select
+                    id="feedback-reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  >
+                    {["wrong", "outdated", "incomplete", "bad citation"].map(
+                      (r) => (
+                        <option key={r}>{r}</option>
+                      ),
+                    )}
+                  </select>
+                  <label htmlFor="feedback-note">Optional detail</label>
+                  <input
+                    id="feedback-note"
+                    value={note}
+                    maxLength={2000}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                  <button
+                    className="button secondary"
+                    disabled={feedbackBusy}
+                    onClick={() => void vote(-1)}
+                  >
+                    Report a problem
+                  </button>
+                </div>
+              )}
               <p role="status">{feedback}</p>
             </div>
           </article>
@@ -295,6 +365,12 @@ export function Ask({ workspace }: { workspace: Workspace }) {
             className="text-link"
             disabled={busy}
             onClick={() => {
+              answerRequest.current?.abort();
+              setHistoryLoading(true);
+              setHistory([]);
+              setError("");
+              setDraft([]);
+              resetFeedback();
               setConversation(crypto.randomUUID());
               setAnswer(null);
               setSelected(null);
@@ -304,24 +380,49 @@ export function Ask({ workspace }: { workspace: Workspace }) {
           >
             New conversation
           </button>
+          {historyLoading ? (
+            <p role="status">Loading questions…</p>
+          ) : (
+            history.length === 0 && (
+              <p>No questions in this conversation yet.</p>
+            )
+          )}
           <ul>
             {history.map((item) => (
               <li key={item.id}>
                 <button
                   className="text-link"
-                  disabled={busy || item.status !== "complete"}
+                  disabled={busy || item.status === "running"}
                   onClick={async () => {
+                    if (item.status === "failed") {
+                      setQuestion(item.question);
+                      setError("");
+                      key.current = crypto.randomUUID();
+                      document.getElementById("question")?.focus();
+                      return;
+                    }
+                    answerRequest.current?.abort();
+                    const controller = new AbortController();
+                    answerRequest.current = controller;
+                    setError("");
+                    resetFeedback();
                     try {
-                      setAnswer(
-                        await (await request(`${base}/${item.id}`)).json(),
-                      );
-                      setSelected(null);
+                      const result = await (
+                        await request(`${base}/${item.id}`, {
+                          signal: controller.signal,
+                        })
+                      ).json();
+                      if (!controller.signal.aborted) {
+                        setAnswer(result);
+                        setSelected(null);
+                      }
                     } catch (e) {
-                      setError(
-                        e instanceof Error
-                          ? e.message
-                          : "Unable to open answer",
-                      );
+                      if (!controller.signal.aborted)
+                        setError(
+                          e instanceof Error
+                            ? e.message
+                            : "Unable to open answer",
+                        );
                     }
                   }}
                 >
@@ -329,7 +430,7 @@ export function Ask({ workspace }: { workspace: Workspace }) {
                 </button>{" "}
                 <small>
                   {item.status === "failed"
-                    ? "Could not complete"
+                    ? "Could not complete · Select to retry"
                     : item.status === "running"
                       ? "In progress"
                       : ""}

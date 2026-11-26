@@ -53,3 +53,6 @@
   padding-block: 8px;
   overflow-wrap: anywhere;
 }
+
+.feedback-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.feedback-details { display: grid; gap: 8px; width: 100%; max-width: 480px; }

@@ -44,11 +44,17 @@ class DocumentService {
     private final JdbcTemplate jdbc;
     private final WorkspaceService workspaces;
     private final DocumentStorage storage;
+    private final UploadLimits limits;
 
-    DocumentService(JdbcTemplate jdbc, WorkspaceService workspaces, DocumentStorage storage) {
+    DocumentService(
+            JdbcTemplate jdbc,
+            WorkspaceService workspaces,
+            DocumentStorage storage,
+            UploadLimits limits) {
         this.jdbc = jdbc;
         this.workspaces = workspaces;
         this.storage = storage;
+        this.limits = limits;
     }
 
     private WorkspaceService.Workspace access(UUID user, UUID workspace, boolean write) {
@@ -297,19 +303,21 @@ class DocumentService {
                         "SELECT count(*) FROM answerbase.document_versions WHERE workspace_id=?",
                         Integer.class,
                         workspace)
-                >= 200)
+                >= limits.maxVersions())
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "This workspace has reached its 200-version preview limit");
+                    "This workspace has reached its "
+                            + limits.maxVersions()
+                            + "-version storage limit");
         long used =
                 jdbc.queryForObject(
                         "SELECT COALESCE(sum(byte_size),0) FROM answerbase.document_versions WHERE workspace_id=?",
                         Long.class,
                         workspace);
-        if (used + bytes.length > 100L * 1024 * 1024)
+        if (limits.exceedsStorage(used, bytes.length))
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "This workspace has reached its 100 MB preview storage limit");
+                    "This workspace has reached its storage quota. Remove unused documents or contact your administrator.");
         int number = 1;
         if (document == null) {
             document = UUID.randomUUID();
