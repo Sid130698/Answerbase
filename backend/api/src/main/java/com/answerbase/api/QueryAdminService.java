@@ -35,7 +35,7 @@ class QueryAdminService {
             (q.trace->>'totalMs')::bigint AS latency_ms,f.vote,f.reason,
             EXISTS(SELECT 1 FROM answerbase.evaluation_candidates c WHERE c.question_id=q.id) AS corrected
             FROM answerbase.questions q LEFT JOIN answerbase.answer_feedback f ON f.question_id=q.id AND f.user_id=q.user_id
-            WHERE q.workspace_id=? AND (NOT ? OR q.abstained=true OR q.status='failed')
+            WHERE q.workspace_id=? AND (NOT ? OR q.abstained=true OR q.status='failed' OR f.vote=-1)
             ORDER BY q.created_at DESC,q.id LIMIT 25 OFFSET ?
             """,
                 workspace,
@@ -108,7 +108,7 @@ class QueryAdminService {
         admin(user, workspace);
         var rows =
                 jdbc.queryForList(
-                        "SELECT question,status,created_at FROM answerbase.questions WHERE workspace_id=? AND (abstained=true OR status='failed') ORDER BY created_at DESC,id LIMIT 1000",
+                        "SELECT q.question,q.status,q.created_at FROM answerbase.questions q LEFT JOIN answerbase.answer_feedback f ON f.question_id=q.id AND f.user_id=q.user_id WHERE q.workspace_id=? AND (q.abstained=true OR q.status='failed' OR f.vote=-1) ORDER BY q.created_at DESC,q.id LIMIT 1000",
                         workspace);
         var csv = new StringBuilder("question,status,created_at\r\n");
         for (var row : rows)

@@ -4,7 +4,7 @@ No hosted accounts are needed for this workflow. `make local` starts Supabase, a
 
 ## Health and failures
 
-Run `node scripts/diagnose-local.mjs`. It checks API readiness, Auth, Ollama, optional reranker and aggregate queue state. Nonzero exit means a required service is unavailable, failed jobs exist, a question lease expired, object deletion is retrying, or ingestion has been queued for more than five minutes. It never prints credentials, document text or customer question content. Reranker availability is reported as optional because workspaces can disable it; a reranking request still fails closed when its configured provider is unavailable.
+Run `node scripts/diagnose-local.mjs`. It checks API readiness, Auth, Ollama, optional reranker and aggregate queue state. Nonzero exit means a required service is unavailable, failed jobs exist, a question lease expired, object deletion is retrying, ingestion has been queued for more than five minutes, ingestion failures exceed 5% of finished files over 24 hours, or complete-answer p95 exceeds eight seconds over 24 hours. The local model currently triggers the latency alert. It never prints credentials, document text or customer question content. Reranker availability is reported as optional because workspaces can disable it; a reranking request still fails closed when its configured provider is unavailable.
 
 Inspect `docker compose logs --since=15m api worker` for errors and structured question timing entries. Logs are development diagnostics, not a configured production alert destination. No email/Slack messages or recurring OS jobs are installed. Production alert routing, dashboards, backup/restore drills and external uptime monitoring are not verified.
 
@@ -12,7 +12,7 @@ Inspect `docker compose logs --since=15m api worker` for errors and structured q
 
 `make test-db` creates `answerbase_test` if absent. Spring integration tests use this database through the `test` profile and test-specific storage. Application data stays in `answerbase`. Test fixtures clean up their own data; do not point test overrides at a production or customer database. `make test` checks Java, both frontends, connector behavior, and evaluation contracts. JaCoCo combines core unit tests with API integration execution and enforces at least 70% shared-core line coverage with no exclusions. Its HTML report is `backend/coverage/target/site/jacoco-aggregate/index.html`.
 
-Model HTTP responses are bounded while being received, preventing unbounded response-body allocation. HTTP failures and over-limit chunked responses are covered by a local HTTP-server test. This is a response size boundary, not a model-content trust decision.
+Model HTTP responses are bounded while being received, preventing unbounded response-body allocation. HTTP failures, over-limit chunked responses and a stalled response body are covered by local HTTP-server tests. A full-response deadline cancels the pending HTTP operation, including after headers arrive. This is a response size boundary, not a model-content trust decision.
 
 ## Scale probe
 

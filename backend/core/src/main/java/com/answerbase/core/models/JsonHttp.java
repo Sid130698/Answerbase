@@ -36,12 +36,20 @@ public final class JsonHttp {
                 body == null
                         ? HttpRequest.BodyPublishers.noBody()
                         : HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body)));
+        var pending = client.sendAsync(builder.build(), info -> new LimitedBody(8 * 1024 * 1024));
         try {
-            var response = client.send(builder.build(), info -> new LimitedBody(8 * 1024 * 1024));
+            var response = pending.get(timeout, TimeUnit.SECONDS);
             if (response.statusCode() != 200)
                 throw new IOException("Model service returned HTTP " + response.statusCode());
             return JSON.readTree(response.body());
+        } catch (TimeoutException e) {
+            pending.cancel(true);
+            throw new IOException("Model response deadline exceeded", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof IOException io) throw io;
+            throw new IOException("Model request failed", e.getCause());
         } catch (InterruptedException e) {
+            pending.cancel(true);
             Thread.currentThread().interrupt();
             throw new IOException("Model request interrupted", e);
         }

@@ -65,4 +65,42 @@ class JsonHttpTests {
             server.stop(0);
         }
     }
+
+    @Test
+    void deadlineCoversAnUnfinishedResponseBody() throws Exception {
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        server.createContext(
+                "/stall",
+                exchange -> {
+                    exchange.sendResponseHeaders(200, 0);
+                    try (var out = exchange.getResponseBody()) {
+                        out.write('{');
+                        out.flush();
+                        try {
+                            release.await(5, java.util.concurrent.TimeUnit.SECONDS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                });
+        server.start();
+        try {
+            assertTimeoutPreemptively(
+                    java.time.Duration.ofSeconds(3),
+                    () ->
+                            assertThrows(
+                                    IOException.class,
+                                    () ->
+                                            new JsonHttp()
+                                                    .get(
+                                                            "http://127.0.0.1:"
+                                                                    + server.getAddress().getPort()
+                                                                    + "/stall",
+                                                            1)));
+        } finally {
+            release.countDown();
+            server.stop(0);
+        }
+    }
 }

@@ -1119,8 +1119,24 @@ class AuthenticationTests {
                                     .detail(UUID.fromString(owner), workspace, answer.id())
                                     .get("corrected_answer"))
                     .isEqualTo("Refunds within 30 days. See refund policy.");
+            questionService.feedback(
+                    UUID.fromString(viewer), workspace, answer.id(), 1, null, null);
             assertThat(queryAdmin.unanswered(UUID.fromString(owner), workspace))
                     .isEqualTo("question,status,created_at\r\n");
+            assertThat(queryAdmin.list(UUID.fromString(owner), workspace, 0, true)).isEmpty();
+            questionService.feedback(
+                    UUID.fromString(viewer),
+                    workspace,
+                    answer.id(),
+                    -1,
+                    "wrong",
+                    "Incorrect answer");
+            assertThat(queryAdmin.list(UUID.fromString(owner), workspace, 0, true)).hasSize(1);
+            assertThat(queryAdmin.unanswered(UUID.fromString(owner), workspace))
+                    .contains(askBody.question());
+            questionService.feedback(
+                    UUID.fromString(viewer), workspace, answer.id(), 1, null, null);
+            assertThat(queryAdmin.list(UUID.fromString(owner), workspace, 0, true)).isEmpty();
             supersedeAttempt.set(true);
             assertThatThrownBy(
                             () ->

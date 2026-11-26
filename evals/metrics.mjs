@@ -25,6 +25,7 @@ export function summarize(rows) {
     hitAt5:average(retrieval.map(r=>r.hitAt5)),mrr:average(retrieval.map(r=>r.reciprocalRank)),allGoldAt5:average(retrieval.map(r=>r.allGoldAt5)),
     generationCases:answers.length, expectedTermsMatchProxy:average(answers.filter(a=>!a.expectedAbstention).map(a=>a.expectedTermsMatchProxy)),
     abstentionRecall:average(answers.filter(a=>a.expectedAbstention).map(a=>Number(a.abstained))),
+    abstentionPrecision:average(answers.filter(a=>a.abstained).map(a=>Number(a.expectedAbstention))),
     falseAbstentionRate:average(answers.filter(a=>!a.expectedAbstention).map(a=>Number(a.abstained))),
     literalCitationIntegrity:citations ? answers.reduce((sum,a)=>sum+a.literalValidCitations,0)/citations:null,
     p50Ms:percentile(latencies,.5),p95Ms:percentile(latencies,.95),
@@ -36,7 +37,7 @@ export function regressions(baseline,current) {
   if (baseline.datasetHash !== current.datasetHash || JSON.stringify(baseline.config)!==JSON.stringify(current.config) || JSON.stringify(baseline.rows.map(r=>r.id))!==JSON.stringify(current.rows.map(r=>r.id))) throw new Error('Incomparable reports: dataset, configuration and case order must match')
   if (current.summary.errors || baseline.summary.errors) throw new Error('Cannot accept a report with request failures')
   const failures=[]
-  for(const metric of ['hitAt5','mrr','allGoldAt5','expectedTermsMatchProxy','abstentionRecall','literalCitationIntegrity']) {
+  for(const metric of ['hitAt5','mrr','allGoldAt5','expectedTermsMatchProxy','abstentionRecall','abstentionPrecision','literalCitationIntegrity']) {
     const before=baseline.summary[metric],after=current.summary[metric]
     if(before!=null && (after==null || before-after > .030000001))failures.push(metric)
   }

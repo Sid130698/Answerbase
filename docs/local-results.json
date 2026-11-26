@@ -219,12 +219,82 @@
       "Shares local hardware with other services; not a capacity guarantee"
     ]
   },
-  "backendTests": 23,
+  "backendTests": 24,
   "coreCoverage": {
-    "coveredLines": 558,
-    "totalLines": 718,
-    "ratio": 0.7771587743732591
+    "coveredLines": 566,
+    "totalLines": 726,
+    "ratio": 0.7796143250688705
   },
   "humanReview": "pending",
-  "hostedVerification": "not configured"
+  "hostedVerification": "not configured",
+  "answerRuns": [
+    {
+      "startedAt": "2026-11-26T01:52:28.988Z",
+      "completedAt": "2026-11-26T02:27:16.968Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "answers",
+        "variant": "hybrid-rerank",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 6,
+        "retrievalCases": 50,
+        "hitAt5": 1,
+        "mrr": 0.99,
+        "allGoldAt5": 1,
+        "generationCases": 64,
+        "expectedTermsMatchProxy": 0.9,
+        "abstentionRecall": 0.9285714285714286,
+        "abstentionPrecision": 0.9285714285714286,
+        "falseAbstentionRate": 0.02,
+        "literalCitationIntegrity": 1,
+        "p50Ms": 5837,
+        "p95Ms": 16038,
+        "inputTokens": 69554,
+        "outputTokens": 5926,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      },
+      "label": "Initial run before full-response deadline hardening; incomplete due to six request failures",
+      "failedCases": [
+        {
+          "id": "adversarial-01",
+          "error": "/workspaces/[fixture]/questions: HTTP 503"
+        },
+        {
+          "id": "adversarial-02",
+          "error": "The operation was aborted due to timeout"
+        },
+        {
+          "id": "adversarial-03",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        },
+        {
+          "id": "adversarial-04",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        },
+        {
+          "id": "adversarial-05",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        },
+        {
+          "id": "adversarial-06",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        }
+      ]
+    }
+  ]
 }

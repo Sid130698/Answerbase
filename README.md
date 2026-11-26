@@ -95,7 +95,7 @@ or deployment credentials are configured. The GitHub repository and review PRs a
 
 ## Remaining delivery work
 
-Shared-core coverage is measured at 77.72% (558/718 lines). Evaluation and scale verification remain in progress; see [the local evaluation instructions](evals/README.md). Workspace model/retrieval settings, limited prompt masking and daily request budgets are documented in [workspace settings](docs/workspace-settings.md). Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
+Shared-core coverage is measured at 77.96% (566/726 lines). Evaluation and scale verification remain in progress; see [the local evaluation instructions](evals/README.md). Workspace model/retrieval settings, limited prompt masking and daily request budgets are documented in [workspace settings](docs/workspace-settings.md). Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
 

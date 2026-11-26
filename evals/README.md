@@ -31,3 +31,12 @@ Set `EVAL_BASELINE=path/to/reviewed-report.json` to fail on a drop greater than 
 ## Corpus provenance
 
 The Acorn documents are fictional fixtures authored for this repository. Archived/current policy conflict and the malicious instruction are intentional; neither is production policy. `moon.md` contains two short paraphrased public facts from [NASA Moon Facts](https://science.nasa.gov/moon/facts/), accessed 2026-11-26. No NASA images, logos or third-party works are bundled. See [NASA usage guidance](https://www.nasa.gov/nasa-brand-center/images-and-media/). No endorsement is implied. This is a very small public-reference component, not a representative public-document benchmark.
+
+## Optional local rubric judge
+
+```sh
+node evals/judge.mjs evals/reports/my-answer-run.json
+node evals/check-regression.mjs BASELINE.json CURRENT.json BASELINE.judge.json CURRENT.judge.json
+```
+
+The judge uses local Ollama (`EVAL_JUDGE_MODEL`, default `llama3.1:8b`) and grades correctness, faithfulness and citation support against the question, annotated reference documents and returned evidence. It checks the source dataset hash and binds grades to the exact answer-report hash. Grades are labeled `llmJudge*`; they are not human-verified correctness. Using the same model family for generation and judging can introduce correlated bias. Each completed grading run exports a deterministic 20% review sample with blank human fields. A reviewer must inspect and grade that sample and calculate agreement before these scores can support PRD acceptance. Failed answer requests remain ungraded errors, not silently successful abstentions. The comparison command rejects incomplete/mismatched reports and >3-point drops, including model-judged correctness when both judge reports are supplied. It is available locally; no untrusted PR can trigger a live model judge in CI.
