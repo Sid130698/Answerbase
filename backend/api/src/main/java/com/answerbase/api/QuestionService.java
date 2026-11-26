@@ -119,6 +119,14 @@ class QuestionService {
             if (followUp) retrievalQuestion = String.join(" ", previous) + " " + question;
             if (retrievalQuestion.length() > 2000)
                 retrievalQuestion = retrievalQuestion.substring(retrievalQuestion.length() - 2000);
+            var policy = WorkspacePolicy.read(jdbc, workspace, WorkspacePolicy.DEFAULT);
+            var promptRedactor = new PiiRedactor();
+            java.util.function.UnaryOperator<String> mask =
+                    policy.redactPii() ? promptRedactor::redact : text -> text;
+            GenerationModel selectedModel =
+                    generation instanceof ChatModel chat
+                            ? chat.forModel(policy.generationModel())
+                            : generation;
             var found = retrieval.search(user, workspace, retrievalQuestion);
             var evidence = found.passages();
             var verified = new AnswerVerifier.Answer(true, List.of());
@@ -128,7 +136,9 @@ class QuestionService {
                 var source = new LinkedHashMap<String, String>();
                 for (var hit : evidence) source.put(hit.id(), hit.content());
                 var promptData = new LinkedHashMap<String, Object>();
-                promptData.put("previousQuestions", followUp ? previous : List.of());
+                promptData.put(
+                        "previousQuestions",
+                        followUp ? previous.stream().map(mask).toList() : List.of());
                 promptData.put(
                         "evidence",
                         evidence.stream()
@@ -138,15 +148,15 @@ class QuestionService {
                                                         "id",
                                                         hit.id(),
                                                         "title",
-                                                        hit.title(),
+                                                        mask.apply(hit.title()),
                                                         "content",
-                                                        hit.content()))
+                                                        mask.apply(hit.content())))
                                 .toList());
-                promptData.put("currentQuestion", question);
+                promptData.put("currentQuestion", mask.apply(question));
                 String prompt = JsonHttp.JSON.writeValueAsString(promptData);
                 for (int attempt = 0; attempt < 2; attempt++) {
                     var generated =
-                            generation.generate(
+                            selectedModel.generate(
                                     SYSTEM,
                                     prompt
                                             + (attempt == 1
@@ -156,7 +166,11 @@ class QuestionService {
                     output += generated.outputTokens();
                     model = generated.model();
                     try {
-                        verified = new AnswerVerifier().verify(generated.json(), source);
+                        verified =
+                                new AnswerVerifier()
+                                        .verify(
+                                                promptRedactor.restoreJson(generated.json()),
+                                                source);
                         break;
                     } catch (IllegalArgumentException invalid) {
                         message = "I could not verify an answer from these documents.";
@@ -182,7 +196,9 @@ class QuestionService {
                             "retrieval",
                             found.options(),
                             "message",
-                            message);
+                            message,
+                            "maskedIdentifiers",
+                            promptRedactor.count());
             Object[] publication = {
                 JsonHttp.JSON.writeValueAsString(verified),
                 JsonHttp.JSON.writeValueAsString(evidence),
@@ -305,6 +321,18 @@ class QuestionService {
                             jdbc.queryForObject(
                                     "SELECT count(*) FROM answerbase.questions WHERE status='running' AND lease_until>now()",
                                     Integer.class);
+                    var budget =
+                            WorkspacePolicy.read(jdbc, workspace, WorkspacePolicy.DEFAULT)
+                                    .dailyAttempts();
+                    int today =
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.question_attempts WHERE workspace_id=? AND created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'",
+                                    Integer.class,
+                                    workspace);
+                    if (today >= budget)
+                        throw new ResponseStatusException(
+                                HttpStatus.TOO_MANY_REQUESTS,
+                                "Workspace daily question budget reached. It resets at 00:00 UTC.");
                     if (recent >= 10 || activeUser >= 1 || activeWorkspace >= 3 || activeTotal >= 4)
                         throw new ResponseStatusException(
                                 HttpStatus.TOO_MANY_REQUESTS,

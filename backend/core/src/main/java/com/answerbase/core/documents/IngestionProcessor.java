@@ -56,7 +56,14 @@ public final class IngestionProcessor {
             if (!checksum.equals(job.get("checksum")))
                 throw new java.io.IOException(
                         "Stored file checksum mismatch. Upload a new version.");
-            var parsed = new TextExtractor().parse(bytes, (String) job.get("media_type"));
+            var policy =
+                    com.answerbase.core.models.WorkspacePolicy.read(
+                            jdbc,
+                            (UUID) job.get("workspace_id"),
+                            com.answerbase.core.models.WorkspacePolicy.DEFAULT);
+            var parsed =
+                    new TextExtractor(policy.chunkChars())
+                            .parse(bytes, (String) job.get("media_type"));
             var chunks = parsed.chunks();
             tx.executeWithoutResult(
                     status -> {

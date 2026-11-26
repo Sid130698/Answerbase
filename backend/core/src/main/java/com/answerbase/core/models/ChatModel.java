@@ -15,6 +15,10 @@ public final class ChatModel implements GenerationModel {
         this.key = key;
     }
 
+    public ChatModel forModel(String selected) {
+        return selected.equals("default") ? this : new ChatModel(provider, url, selected, key);
+    }
+
     public Output generate(String system, String prompt) throws IOException {
         var messages =
                 List.of(
