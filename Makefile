@@ -21,7 +21,7 @@ backend-check: test-db
 	python3 scripts/check-coverage.py
 
 frontend-check:
-	cd frontend && npm ci && npm run lint && npm run build
+	cd frontend && npm ci && npm run lint && npm test && npm run build
 
 format:
 	cd backend && ./mvnw spotless:apply

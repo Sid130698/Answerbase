@@ -14,7 +14,6 @@
 .topbar { height: 76px; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); font-size: .8125rem; color: var(--text-secondary); }
 .topbar strong { font-weight: 500; color: var(--text); }
 .topbar span span { margin: 0 12px; color: var(--text-secondary); }
-.preview-label { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; white-space: nowrap; }
 main { max-width: 1440px; margin: 0 auto; padding: 64px 48px; }
 .ask-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 64px; }
 .question-space { padding-top: 48px; }
@@ -77,3 +76,12 @@ h1 span { color: var(--text-secondary); }
 .support-view-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 20px; border-bottom: 2px solid var(--accent); background: var(--accent-soft); font-size: .8125rem; overflow-wrap: anywhere; }
 
 button.text-link{border:0;background:transparent;color:var(--accent);padding:4px 0;text-align:left;cursor:pointer;font-family:var(--font-body)}button.text-link:disabled{color:var(--text-secondary);cursor:not-allowed}
+
+.answer-sources { padding-left: 20px; font-size: .875rem; color: var(--text-secondary); }
+@media (max-width: 650px) {
+  .sidebar nav { flex-wrap: nowrap; overflow-x: auto; margin-top: 0; }
+  .nav-link { flex-shrink: 0; }
+  .sidebar .sidebar-note { padding-top: 8px; }
+  .sidebar-note .account-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-note button { flex-shrink: 0; white-space: nowrap; }
+}

@@ -63,6 +63,9 @@ answerbase:
 
 # Identical storage configuration is required in API and worker.
 documents:
+  limits:
+    max-versions: ${DOCUMENT_MAX_VERSIONS:200}
+    max-bytes: ${DOCUMENT_MAX_BYTES:104857600}
   storage:
     provider: ${DOCUMENT_STORAGE_PROVIDER:local}
     root: ${DOCUMENT_STORAGE_ROOT:.cache/documents}

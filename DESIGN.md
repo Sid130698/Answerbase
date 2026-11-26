@@ -4,7 +4,7 @@
 
 Answerbase is a document Q&A workspace for small support and operations teams. Its visual identity should prioritize reading, source verification, and clear access boundaries.
 The customer UI centers on asking questions, checking cited passages, and managing sources. Swagger, API catalogs, readiness checks, repository links, and implementation milestones belong in developer tooling, never customer navigation.
-Until uploads and retrieval are implemented, show an honest product preview with empty states and clearly unavailable actions. Never fabricate documents, answers, citations, user identities, or successful uploads.
+Show useful empty states and clearly identify unavailable actions. Never fabricate documents, answers, citations, user identities, or successful uploads.
 
 ## Direction
 

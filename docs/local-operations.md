@@ -38,3 +38,9 @@ Raw plans and a compact report are written under ignored `evals/reports/`. A sin
 8. Run evaluation candidates and review actual answers against evidence. Record misses, latency and reviewer identity. Do not replace unanswered cases or failed runs with fabricated success evidence.
 
 The steps above are an acceptance procedure, not a claim that every step has been performed in the browser for this release. Evidence and limitations are recorded in `prd-checklist.md` and the local results document.
+
+## Corpus capacity
+
+`DOCUMENT_MAX_VERSIONS` and `DOCUMENT_MAX_BYTES` bound each workspace's retained source versions and original bytes. Defaults remain 200 versions and 104857600 bytes (100 MiB). They are enforced inside the existing upload transaction/workspace lock; unchanged uploads remain idempotent at capacity. Both must be positive. Set these in `.env` and recreate the API container after changing them.
+
+For a dedicated 2,000-document load workspace, allow at least 2,000 versions plus any version history and size the byte quota to the actual corpus. Increasing quotas is not evidence that ingestion, duplicate detection or concurrent answers perform at that scale. The recorded SQL probe bypassed ingestion and must not be described as an end-to-end load test.
