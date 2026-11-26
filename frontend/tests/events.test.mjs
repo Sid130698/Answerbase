@@ -48,3 +48,10 @@ test("Consumer failure cancels the stream and releases its reader", async () => 
   assert.equal(cancelled, true);
   assert.equal(response.body.locked, false);
 });
+
+test("Mixed LF/CRLF boundaries do not consume the next event", async () => {
+  const events = [];
+  await readEvents(new Response('event: status\ndata: {"step":1}\n\r\nevent: answer\r\ndata: {"done":true}\r\n\n'),
+    (kind, data) => events.push([kind, data]));
+  assert.deepEqual(events, [["status", {step: 1}], ["answer", {done: true}]]);
+});

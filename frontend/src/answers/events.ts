@@ -17,7 +17,7 @@ export async function readEvents(
       while ((boundary = pending.search(/\r?\n\r?\n/)) >= 0) {
         const frame = pending.slice(0, boundary);
         pending = pending.slice(
-          boundary + (pending[boundary] === "\r" ? 4 : 2),
+          boundary + pending.slice(boundary).match(/^\r?\n\r?\n/)![0].length,
         );
         const lines = frame.split(/\r?\n/);
         const kind =
