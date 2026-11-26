@@ -295,6 +295,85 @@
           "error": "/workspaces/[fixture]/questions: HTTP 429"
         }
       ]
+    },
+    {
+      "startedAt": "2026-11-26T02:35:44.731Z",
+      "completedAt": "2026-11-26T02:45:20.514Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "answers",
+        "variant": "hybrid-rerank",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.9622641509433962,
+        "allGoldAt5": 1,
+        "generationCases": 70,
+        "expectedTermsMatchProxy": 0.8679245283018868,
+        "abstentionRecall": 1,
+        "abstentionPrecision": 0.8947368421052632,
+        "falseAbstentionRate": 0.03773584905660377,
+        "literalCitationIntegrity": 1,
+        "p50Ms": 5264,
+        "p95Ms": 13107,
+        "inputTokens": 76648,
+        "outputTokens": 6083,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      },
+      "label": "Fresh full run after request deadline hardening; no concurrent model evaluation or scale work"
     }
-  ]
+  ],
+  "environment": {
+    "cpu": "Apple M5",
+    "logicalCpus": 10,
+    "memoryGiB": 16,
+    "generation": "Ollama llama3.1:8b Q4_K_M",
+    "embedding": "nomic-embed-text:latest",
+    "reranker": "cross-encoder/ms-marco-MiniLM-L6-v2"
+  },
+  "stream": {
+    "testedAt": "2026-11-26T02:45:51.733Z",
+    "firstStatusMs": 128,
+    "firstVerifiedClaimMs": 8422,
+    "finalAnswerMs": 8423,
+    "verifiedClaims": 2,
+    "abstained": false,
+    "limitation": "Single local request; status events are not answer tokens"
+  },
+  "permissionProbe": {
+    "testedAt": "2026-11-26T02:46:09.983Z",
+    "adminRetrievedCanary": true,
+    "viewerRetrievalExcludedCanary": true,
+    "viewerOriginalDenied": 404,
+    "adversarialAnswerExcludedCanary": true,
+    "abstained": true,
+    "limitation": "One live same-workspace restricted-document probe; broader tenant/group cases are integration-tested"
+  },
+  "invalidInitialJudge": {
+    "summary": {
+      "graded": 25,
+      "errors": 45,
+      "llmJudgeCorrectness": 0.56,
+      "llmJudgeFaithfulness": 1,
+      "llmJudgeCitationAccuracy": 1,
+      "humanAgreement": null
+    },
+    "status": "Unusable: 45 grading failures. Partial means are not quality scores."
+  }
 }

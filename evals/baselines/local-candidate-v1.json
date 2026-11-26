@@ -1,0 +1,1168 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-26T02:35:44.731Z",
+  "completedAt": "2026-11-26T02:45:20.514Z",
+  "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+  "config": {
+    "mode": "answers",
+    "variant": "hybrid-rerank",
+    "retrievalMode": "hybrid",
+    "candidates": 30,
+    "topK": 8,
+    "rerank": true,
+    "generationModel": "default",
+    "chunkChars": 1800,
+    "contextLine": true,
+    "redactPii": true,
+    "dailyAttempts": 1000
+  },
+  "authorship": "AI-authored candidates; NOT human-reviewed gold",
+  "summary": {
+    "cases": 70,
+    "errors": 0,
+    "retrievalCases": 53,
+    "hitAt5": 1,
+    "mrr": 0.9622641509433962,
+    "allGoldAt5": 1,
+    "generationCases": 70,
+    "expectedTermsMatchProxy": 0.8679245283018868,
+    "abstentionRecall": 1,
+    "abstentionPrecision": 0.8947368421052632,
+    "falseAbstentionRate": 0.03773584905660377,
+    "literalCitationIntegrity": 1,
+    "p50Ms": 5264,
+    "p95Ms": 13107,
+    "inputTokens": 76648,
+    "outputTokens": 6083,
+    "knownApiCostUsd": 0,
+    "unpricedAnswers": 0,
+    "semanticCorrectness": null,
+    "faithfulness": null,
+    "humanCitationAccuracy": null
+  },
+  "reviewStatus": "candidate; human review pending; not an acceptance baseline",
+  "rows": [
+    {
+      "id": "fact-01",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 4,
+        "literalValidCitations": 4
+      },
+      "elapsedMs": 21068
+    },
+    {
+      "id": "fact-02",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5961
+    },
+    {
+      "id": "fact-03",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5031
+    },
+    {
+      "id": "fact-04",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 7848
+    },
+    {
+      "id": "fact-05",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5669
+    },
+    {
+      "id": "fact-06",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5264
+    },
+    {
+      "id": "fact-07",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4805
+    },
+    {
+      "id": "fact-08",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4976
+    },
+    {
+      "id": "fact-09",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4887
+    },
+    {
+      "id": "fact-10",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5247
+    },
+    {
+      "id": "fact-11",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4874
+    },
+    {
+      "id": "fact-12",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4570
+    },
+    {
+      "id": "fact-13",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4752
+    },
+    {
+      "id": "fact-14",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4857
+    },
+    {
+      "id": "fact-15",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5373
+    },
+    {
+      "id": "fact-16",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5369
+    },
+    {
+      "id": "fact-17",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5557
+    },
+    {
+      "id": "fact-18",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4645
+    },
+    {
+      "id": "fact-19",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5381
+    },
+    {
+      "id": "fact-20",
+      "category": "fact",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5331
+    },
+    {
+      "id": "synthesis-01",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 6363
+    },
+    {
+      "id": "synthesis-02",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5919
+    },
+    {
+      "id": "synthesis-03",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 7478
+    },
+    {
+      "id": "synthesis-04",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5692
+    },
+    {
+      "id": "synthesis-05",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 7179
+    },
+    {
+      "id": "synthesis-06",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 7770
+    },
+    {
+      "id": "synthesis-07",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 7775
+    },
+    {
+      "id": "synthesis-08",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 0.5,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 7980
+    },
+    {
+      "id": "synthesis-09",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5133
+    },
+    {
+      "id": "synthesis-10",
+      "category": "synthesis",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 7579
+    },
+    {
+      "id": "table-01",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5165
+    },
+    {
+      "id": "table-02",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 9580
+    },
+    {
+      "id": "table-03",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5053
+    },
+    {
+      "id": "table-04",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5502
+    },
+    {
+      "id": "table-05",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5200
+    },
+    {
+      "id": "table-06",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 4897
+    },
+    {
+      "id": "table-07",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5688
+    },
+    {
+      "id": "table-08",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5622
+    },
+    {
+      "id": "table-09",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 8076
+    },
+    {
+      "id": "table-10",
+      "category": "table",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5588
+    },
+    {
+      "id": "comparison-01",
+      "category": "comparison",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 7173
+    },
+    {
+      "id": "comparison-02",
+      "category": "comparison",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 11888
+    },
+    {
+      "id": "comparison-03",
+      "category": "comparison",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 6,
+        "literalValidCitations": 6
+      },
+      "elapsedMs": 30160
+    },
+    {
+      "id": "comparison-04",
+      "category": "comparison",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 13107
+    },
+    {
+      "id": "comparison-05",
+      "category": "comparison",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 4,
+        "literalValidCitations": 4
+      },
+      "elapsedMs": 16753
+    },
+    {
+      "id": "followup-01",
+      "category": "followup",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 6324
+    },
+    {
+      "id": "followup-02",
+      "category": "followup",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 2,
+        "literalValidCitations": 2
+      },
+      "elapsedMs": 8980
+    },
+    {
+      "id": "followup-03",
+      "category": "followup",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5759
+    },
+    {
+      "id": "followup-04",
+      "category": "followup",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 6248
+    },
+    {
+      "id": "followup-05",
+      "category": "followup",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 1,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 11428
+    },
+    {
+      "id": "unanswerable-01",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 3219
+    },
+    {
+      "id": "unanswerable-02",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2404
+    },
+    {
+      "id": "unanswerable-03",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 3148
+    },
+    {
+      "id": "unanswerable-04",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2728
+    },
+    {
+      "id": "unanswerable-05",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 3109
+    },
+    {
+      "id": "unanswerable-06",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2872
+    },
+    {
+      "id": "unanswerable-07",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2887
+    },
+    {
+      "id": "unanswerable-08",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2171
+    },
+    {
+      "id": "unanswerable-09",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2647
+    },
+    {
+      "id": "unanswerable-10",
+      "category": "unanswerable",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2330
+    },
+    {
+      "id": "adversarial-01",
+      "category": "adversarial",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 0.5,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2632
+    },
+    {
+      "id": "adversarial-02",
+      "category": "adversarial",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 0.5,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 1,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5220
+    },
+    {
+      "id": "adversarial-03",
+      "category": "adversarial",
+      "retrieval": {
+        "hitAt5": 1,
+        "reciprocalRank": 0.5,
+        "allGoldAt5": 1
+      },
+      "answer": {
+        "abstained": false,
+        "expectedAbstention": false,
+        "expectedTermsMatchProxy": 0,
+        "citationCount": 1,
+        "literalValidCitations": 1
+      },
+      "elapsedMs": 5133
+    },
+    {
+      "id": "adversarial-04",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2426
+    },
+    {
+      "id": "adversarial-05",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2061
+    },
+    {
+      "id": "adversarial-06",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2132
+    },
+    {
+      "id": "adversarial-07",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2571
+    },
+    {
+      "id": "adversarial-08",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2138
+    },
+    {
+      "id": "adversarial-09",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 2670
+    },
+    {
+      "id": "adversarial-10",
+      "category": "adversarial",
+      "retrieval": null,
+      "answer": {
+        "abstained": true,
+        "expectedAbstention": true,
+        "expectedTermsMatchProxy": null,
+        "citationCount": 0,
+        "literalValidCitations": 0
+      },
+      "elapsedMs": 7094
+    }
+  ]
+}
