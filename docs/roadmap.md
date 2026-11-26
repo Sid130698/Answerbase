@@ -1,13 +1,16 @@
-# Product roadmap
+# Delivery status and next gates
 
-A feature count depends on granularity. After document ingestion, five major milestones remain for an initial usable hosted Q&A product; these are not five small tasks.
+The local product path is implemented: authentication, organization/workspace enrollment, members/groups, five-format ingestion, private originals and versions, folder sync, authorized hybrid retrieval, reranking, cited answers/history, source inspection, feedback/corrections, query administration, settings, retention/deletion, and a separate staff console with audited delegation.
 
-1. **Team onboarding and access UI:** approved organization invitations/joining and workspace member management. Backend workspace membership exists; onboarding currently needs a trusted local script.
-2. **Embeddings and authorized retrieval:** select/configure an embedding model, embed chunks, pgvector indexing, workspace-filtered search, document-version selection and reindexing.
-3. **Cited Q&A:** Groq/provider adapter, grounded prompts, answers with page/line citations, original-source navigation, no-answer behavior and conversation history.
-4. **Quality and document lifecycle:** gold-set evaluations, cross-workspace leakage tests, answer feedback, deletion/retention including originals and embeddings, and orphan cleanup.
-5. **Hosted operation:** provision free-tier services within actual quotas, secrets/backups, monitoring, account-wide usage limits, staff SSO/MFA and production access review. Free availability and capacity are not guaranteed.
+Release checks include an isolated test database, core coverage gate, local candidate evaluation, retrieval ablations, a synthetic 50,000-chunk SQL probe and operational diagnostics. See `prd-checklist.md` for exact evidence and `local-results.json` for recorded measurements. Open feature PRs require review before merge.
 
-Completed foundation: monorepo/CI, Supabase authentication, organizations and workspace roles, separate staff support console and audited delegation. Document ingestion adds originals, versions, worker processing, retries, source passage previews and downloads.
+Remaining acceptance gates are substantial:
 
-Optional later scope: OCR, external connectors, bulk upload, custom company domains/customer SSO, cross-workspace document sharing and richer support diagnostics.
+1. Human-written/reviewed gold answers, passage anchors and difficulty labels; expand the very small public-reference corpus into a representative licensed document collection. Candidate fixture results are not a production quality claim.
+2. Rubric grading and a 20% human spot-check with agreement measurement. Investigate wrong answers and false abstentions; local latency currently misses the targets.
+3. A trusted model-equipped CI runner with an approved baseline. Ordinary PR CI checks evaluation contracts, not live model quality.
+4. Full ingestion and concurrent-query testing at the target scale. The SQL probe uses synthetic vectors and one query at a time.
+5. Hosted accounts, public TLS/storage/secrets/backup verification, monitoring destinations and a complete dependency-license review. No hosted or paid resources are provisioned.
+6. Public demo URL, video/write-up, five external testers/three genuine quotes and pilot follow-up. These require real participation and cannot be fabricated.
+
+OCR remains stretch scope. Company SSO/domain enrollment and tenant hostnames remain future adapters, per owner direction. Free hosted capacity is not assumed; current verified operation is local.

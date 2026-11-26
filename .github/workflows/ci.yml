@@ -37,6 +37,8 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               for component in ('backend', 'frontend', 'support-frontend'):
                   changed = shared or any(p.startswith(component + '/') for p in files)
+                  if component == 'backend' and any(p.startswith('scripts/check-coverage') for p in files):
+                      changed = True
                   if component in ('frontend', 'support-frontend') and '.nvmrc' in files:
                       changed = True
                   out.write(f'{component}={str(changed).lower()}\n')
@@ -50,12 +52,12 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_DB: answerbase
+          POSTGRES_DB: answerbase_test
           POSTGRES_USER: answerbase
           POSTGRES_PASSWORD: answerbase-local
         ports: [55432:5432]
         options: >-
-          --health-cmd "pg_isready -U answerbase -d answerbase"
+          --health-cmd "pg_isready -U answerbase -d answerbase_test"
           --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +70,8 @@ jobs:
       - name: Verify modules, migrations, and closed access boundary
         working-directory: backend
         run: ./mvnw -B verify
+      - name: Enforce core coverage
+        run: python3 scripts/check-coverage.py
   frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
@@ -110,3 +114,13 @@ jobs:
         with:
           node-version: '24'
       - run: node --test connectors/*.test.mjs
+
+  evaluation-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test evals/*.test.mjs

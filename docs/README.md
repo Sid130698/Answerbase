@@ -22,3 +22,5 @@ The design describes the target system. See the root README for what is actually
 - [Document ingestion and storage](document-ingestion.md)
 - [Remaining product milestones](roadmap.md)
 - [Ingestion architecture](../answerbase-ingestion-design.html)
+- [Implemented local runtime: unified diagram](../answerbase-runtime-design.html)
+- [Local evaluation method and candidate corpus](../evals/README.md)

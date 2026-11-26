@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: ${TEST_DATABASE_URL:jdbc:postgresql://localhost:55432/answerbase_test}
+    username: ${TEST_DATABASE_USERNAME:answerbase}
+    password: ${TEST_DATABASE_PASSWORD:answerbase-local}
+documents:
+  storage:
+    provider: local
+    root: .cache/test-documents

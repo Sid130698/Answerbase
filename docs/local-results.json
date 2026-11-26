@@ -1,0 +1,410 @@
+{
+  "retrieval": [
+    {
+      "startedAt": "2026-11-26T01:52:05.622Z",
+      "completedAt": "2026-11-26T01:52:12.143Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "retrieval",
+        "variant": "hybrid-rerank",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.9622641509433962,
+        "allGoldAt5": 1,
+        "generationCases": 0,
+        "expectedTermsMatchProxy": null,
+        "abstentionRecall": null,
+        "falseAbstentionRate": null,
+        "literalCitationIntegrity": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      }
+    },
+    {
+      "startedAt": "2026-11-26T01:54:15.260Z",
+      "completedAt": "2026-11-26T01:54:18.728Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "retrieval",
+        "variant": "hybrid",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": false,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.8198113207547171,
+        "allGoldAt5": 1,
+        "generationCases": 0,
+        "expectedTermsMatchProxy": null,
+        "abstentionRecall": null,
+        "falseAbstentionRate": null,
+        "literalCitationIntegrity": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      }
+    },
+    {
+      "startedAt": "2026-11-26T01:55:07.674Z",
+      "completedAt": "2026-11-26T01:55:15.738Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "retrieval",
+        "variant": "no-context",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": false,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.9622641509433962,
+        "allGoldAt5": 1,
+        "generationCases": 0,
+        "expectedTermsMatchProxy": null,
+        "abstentionRecall": null,
+        "falseAbstentionRate": null,
+        "literalCitationIntegrity": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      }
+    },
+    {
+      "startedAt": "2026-11-26T01:54:39.810Z",
+      "completedAt": "2026-11-26T01:54:47.604Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "retrieval",
+        "variant": "small-chunks",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 600,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.9622641509433962,
+        "allGoldAt5": 1,
+        "generationCases": 0,
+        "expectedTermsMatchProxy": null,
+        "abstentionRecall": null,
+        "falseAbstentionRate": null,
+        "literalCitationIntegrity": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      }
+    },
+    {
+      "startedAt": "2026-11-26T01:52:49.645Z",
+      "completedAt": "2026-11-26T01:52:52.733Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "retrieval",
+        "variant": "vector",
+        "retrievalMode": "vector",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": false,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.7977987421383648,
+        "allGoldAt5": 1,
+        "generationCases": 0,
+        "expectedTermsMatchProxy": null,
+        "abstentionRecall": null,
+        "falseAbstentionRate": null,
+        "literalCitationIntegrity": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      }
+    }
+  ],
+  "scale": {
+    "testedAt": "2026-11-26T01:54:59.966Z",
+    "documents": 2000,
+    "chunks": 50000,
+    "dimensions": 768,
+    "syntheticVectors": true,
+    "concurrency": 1,
+    "vectorSqlMs": 761.718,
+    "keywordSqlMs": 114.322,
+    "totalFixtureAndQueriesMs": 77144,
+    "nonmemberDenied": true,
+    "rolledBack": true,
+    "limitations": [
+      "No real embedding, ingestion throughput, reranker or generation measured",
+      "Single run; not p50/p95",
+      "Shares local hardware with other services; not a capacity guarantee"
+    ]
+  },
+  "backendTests": 24,
+  "coreCoverage": {
+    "coveredLines": 566,
+    "totalLines": 726,
+    "ratio": 0.7796143250688705
+  },
+  "humanReview": "pending",
+  "hostedVerification": "not configured",
+  "answerRuns": [
+    {
+      "startedAt": "2026-11-26T01:52:28.988Z",
+      "completedAt": "2026-11-26T02:27:16.968Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "answers",
+        "variant": "hybrid-rerank",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 6,
+        "retrievalCases": 50,
+        "hitAt5": 1,
+        "mrr": 0.99,
+        "allGoldAt5": 1,
+        "generationCases": 64,
+        "expectedTermsMatchProxy": 0.9,
+        "abstentionRecall": 0.9285714285714286,
+        "abstentionPrecision": 0.9285714285714286,
+        "falseAbstentionRate": 0.02,
+        "literalCitationIntegrity": 1,
+        "p50Ms": 5837,
+        "p95Ms": 16038,
+        "inputTokens": 69554,
+        "outputTokens": 5926,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      },
+      "label": "Initial run before full-response deadline hardening; incomplete due to six request failures",
+      "failedCases": [
+        {
+          "id": "adversarial-01",
+          "error": "/workspaces/[fixture]/questions: HTTP 503"
+        },
+        {
+          "id": "adversarial-02",
+          "error": "The operation was aborted due to timeout"
+        },
+        {
+          "id": "adversarial-03",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        },
+        {
+          "id": "adversarial-04",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        },
+        {
+          "id": "adversarial-05",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        },
+        {
+          "id": "adversarial-06",
+          "error": "/workspaces/[fixture]/questions: HTTP 429"
+        }
+      ]
+    },
+    {
+      "startedAt": "2026-11-26T02:35:44.731Z",
+      "completedAt": "2026-11-26T02:45:20.514Z",
+      "datasetHash": "3b2d5ac8f6b9925b914f801b9c6b86aa75ad3eaa107421f8c09c3f859526e4eb",
+      "config": {
+        "mode": "answers",
+        "variant": "hybrid-rerank",
+        "retrievalMode": "hybrid",
+        "candidates": 30,
+        "topK": 8,
+        "rerank": true,
+        "generationModel": "default",
+        "chunkChars": 1800,
+        "contextLine": true,
+        "redactPii": true,
+        "dailyAttempts": 1000
+      },
+      "summary": {
+        "cases": 70,
+        "errors": 0,
+        "retrievalCases": 53,
+        "hitAt5": 1,
+        "mrr": 0.9622641509433962,
+        "allGoldAt5": 1,
+        "generationCases": 70,
+        "expectedTermsMatchProxy": 0.8679245283018868,
+        "abstentionRecall": 1,
+        "abstentionPrecision": 0.8947368421052632,
+        "falseAbstentionRate": 0.03773584905660377,
+        "literalCitationIntegrity": 1,
+        "p50Ms": 5264,
+        "p95Ms": 13107,
+        "inputTokens": 76648,
+        "outputTokens": 6083,
+        "knownApiCostUsd": 0,
+        "unpricedAnswers": 0,
+        "semanticCorrectness": null,
+        "faithfulness": null,
+        "humanCitationAccuracy": null
+      },
+      "label": "Fresh full run after request deadline hardening; no concurrent model evaluation or scale work"
+    }
+  ],
+  "environment": {
+    "cpu": "Apple M5",
+    "logicalCpus": 10,
+    "memoryGiB": 16,
+    "generation": "Ollama llama3.1:8b Q4_K_M",
+    "embedding": "nomic-embed-text:latest",
+    "reranker": "cross-encoder/ms-marco-MiniLM-L6-v2"
+  },
+  "stream": {
+    "testedAt": "2026-11-26T02:45:51.733Z",
+    "firstStatusMs": 128,
+    "firstVerifiedClaimMs": 8422,
+    "finalAnswerMs": 8423,
+    "verifiedClaims": 2,
+    "abstained": false,
+    "limitation": "Single local request; status events are not answer tokens"
+  },
+  "permissionProbe": {
+    "testedAt": "2026-11-26T04:44:55.477Z",
+    "adminRetrievedCanary": true,
+    "viewerRetrievalExcludedCanary": true,
+    "viewerOriginalDenied": 404,
+    "adversarialAnswerExcludedCanary": true,
+    "abstained": true,
+    "limitation": "One live same-workspace restricted-document probe; broader tenant/group cases are integration-tested"
+  },
+  "invalidInitialJudge": {
+    "summary": {
+      "graded": 25,
+      "errors": 45,
+      "llmJudgeCorrectness": 0.56,
+      "llmJudgeFaithfulness": 1,
+      "llmJudgeCitationAccuracy": 1,
+      "humanAgreement": null
+    },
+    "status": "Unusable: 45 grading failures. Partial means are not quality scores."
+  },
+  "rubricJudge": {
+    "model": "llama3.1:8b",
+    "rubricVersion": 4,
+    "completedAt": "2026-11-26T04:44:19.305Z",
+    "summary": {
+      "graded": 70,
+      "errors": 0,
+      "llmJudgeCorrectness": 0.5857142857142857,
+      "llmJudgeFaithfulness": 0.8571428571428571,
+      "llmJudgeCitationAccuracy": 0.8309859154929577,
+      "humanAgreement": null
+    },
+    "reviewSample": [
+      "adversarial-03",
+      "comparison-01",
+      "fact-16",
+      "unanswerable-10",
+      "fact-12",
+      "synthesis-03",
+      "synthesis-02",
+      "table-04",
+      "comparison-05",
+      "fact-05",
+      "unanswerable-06",
+      "comparison-02",
+      "adversarial-02",
+      "fact-08"
+    ],
+    "reviewStatus": "Human spot-check pending; same-family judge bias possible",
+    "reliability": "Uncalibrated: observed spurious failures on simple facts (opening hours and EU storage). Do not interpret the model means as verified accuracy."
+  }
+}

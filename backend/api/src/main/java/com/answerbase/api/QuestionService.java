@@ -250,6 +250,13 @@ class QuestionService {
                             output);
             return read(user, workspace, existing);
         } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(QuestionService.class)
+                    .warn(
+                            "query_failed id={} workspace={} latency_ms={} error_type={}",
+                            existing,
+                            workspace,
+                            (System.nanoTime() - started) / 1_000_000,
+                            e.getClass().getSimpleName());
             jdbc.update(
                     "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running'",
                     "Answer service unavailable or access changed. Retry the question.",
