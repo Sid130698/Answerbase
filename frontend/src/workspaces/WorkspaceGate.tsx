@@ -56,6 +56,7 @@ export function WorkspaceGate({ children }: { children: (workspace: Workspace, s
     window.addEventListener('popstate', sync)
     return () => window.removeEventListener('popstate', sync)
   }, [])
+  useEffect(()=>{const changed=()=>setAttempt(value=>value+1);window.addEventListener('workspace-membership-changed',changed);return()=>window.removeEventListener('workspace-membership-changed',changed)},[])
   useEffect(() => {
     let active = true
     request<Workspace[]>('').then(rows => {

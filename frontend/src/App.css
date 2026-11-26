@@ -75,3 +75,5 @@ h1 span { color: var(--text-secondary); }
 .organization-name { font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; margin: 0 0 8px; }
 .organization-join-heading { font-size: 1rem; margin-top: 40px; }
 .support-view-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 20px; border-bottom: 2px solid var(--accent); background: var(--accent-soft); font-size: .8125rem; overflow-wrap: anywhere; }
+
+button.text-link{border:0;background:transparent;color:var(--accent);padding:4px 0;text-align:left;cursor:pointer;font-family:var(--font-body)}button.text-link:disabled{color:var(--text-secondary);cursor:not-allowed}

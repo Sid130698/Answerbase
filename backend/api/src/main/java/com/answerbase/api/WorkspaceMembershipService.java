@@ -16,7 +16,17 @@ class WorkspaceMembershipService {
         viewer
     }
 
-    record Member(UUID userId, Role role) {}
+    record Member(UUID userId, Role role, String email) {}
+
+    record Candidate(UUID userId, String email) {}
+
+    List<Candidate> eligible(UUID caller, UUID workspace) {
+        var access = requireAdmin(caller, workspace);
+        return jdbc.query(
+                "SELECT id,email FROM answerbase.users WHERE organization_id=? ORDER BY email NULLS LAST,id LIMIT 1000",
+                (rs, row) -> new Candidate(rs.getObject("id", UUID.class), rs.getString("email")),
+                access.organizationId());
+    }
 
     private final JdbcTemplate jdbc;
     private final WorkspaceService workspaces;
@@ -37,11 +47,12 @@ class WorkspaceMembershipService {
     List<Member> list(UUID caller, UUID workspace) {
         var access = requireAdmin(caller, workspace);
         return jdbc.query(
-                "SELECT user_id, role FROM answerbase.workspace_members WHERE organization_id=? AND workspace_id=? ORDER BY user_id",
+                "SELECT m.user_id,m.role,u.email FROM answerbase.workspace_members m JOIN answerbase.users u ON u.id=m.user_id WHERE m.organization_id=? AND m.workspace_id=? ORDER BY u.email NULLS LAST,m.user_id",
                 (rs, row) ->
                         new Member(
                                 rs.getObject("user_id", UUID.class),
-                                Role.valueOf(rs.getString("role"))),
+                                Role.valueOf(rs.getString("role")),
+                                rs.getString("email")),
                 access.organizationId(),
                 workspace);
     }

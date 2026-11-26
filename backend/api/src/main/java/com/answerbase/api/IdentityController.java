@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 class IdentityController {
     private final OrganizationService organizations;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    IdentityController(OrganizationService organizations) {
+    IdentityController(
+            OrganizationService organizations, org.springframework.jdbc.core.JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
         this.organizations = organizations;
     }
 
@@ -22,6 +25,12 @@ class IdentityController {
                     "Validates a Supabase access token. Identity does not grant workspace membership.",
             security = @SecurityRequirement(name = "bearerAuth"))
     Identity me(@AuthenticationPrincipal Jwt jwt) {
+        String email = jwt.getClaimAsString("email");
+        if (email != null && email.length() <= 320)
+            jdbc.update(
+                    "UPDATE answerbase.users SET email=? WHERE id=?",
+                    email,
+                    java.util.UUID.fromString(jwt.getSubject()));
         return new Identity(
                 jwt.getSubject(),
                 jwt.getClaimAsString("email"),

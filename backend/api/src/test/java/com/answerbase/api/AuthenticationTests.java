@@ -246,6 +246,137 @@ class AuthenticationTests {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Autowired InvitationService invitations;
+
+    @Test
+    void invitationsRequireApprovalMatchingIdentityAndOneOrganization() throws Exception {
+        UUID owner = UUID.randomUUID(),
+                other = UUID.randomUUID(),
+                recipient = UUID.randomUUID(),
+                staff = UUID.randomUUID();
+        UUID org = provision(owner.toString(), "owner", null),
+                otherOrg = provision(other.toString(), "owner", null);
+        var mapper = com.answerbase.core.models.JsonHttp.JSON;
+        UUID workspace =
+                UUID.fromString(
+                        mapper.readTree(
+                                        create(
+                                                        userToken(owner.toString()),
+                                                        UUID.randomUUID().toString(),
+                                                        "{\"name\":\"Invited team\"}")
+                                                .body())
+                                .path("id")
+                                .asText());
+        UUID otherWorkspace =
+                UUID.fromString(
+                        mapper.readTree(
+                                        create(
+                                                        userToken(other.toString()),
+                                                        UUID.randomUUID().toString(),
+                                                        "{\"name\":\"Other team\"}")
+                                                .body())
+                                .path("id")
+                                .asText());
+        try {
+            var invite =
+                    invitations.create(
+                            owner,
+                            workspace,
+                            "recipient@example.test",
+                            WorkspaceMembershipService.Role.editor);
+            assertThatThrownBy(
+                            () ->
+                                    invitations.accept(
+                                            recipient, "wrong@example.test", invite.token()))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            assertThat(
+                            jdbc.queryForObject(
+                                    "SELECT count(*) FROM answerbase.users WHERE id=?",
+                                    Integer.class,
+                                    recipient))
+                    .isZero();
+            assertThat(invitations.accept(recipient, "RECIPIENT@example.test", invite.token()))
+                    .isEqualTo(workspace);
+            assertThat(invitations.accept(recipient, "recipient@example.test", invite.token()))
+                    .isEqualTo(workspace);
+            assertThat(workspaceService.get(recipient, workspace).role()).isEqualTo("editor");
+            assertThatThrownBy(
+                            () ->
+                                    invitations.create(
+                                            recipient,
+                                            workspace,
+                                            "someone@example.test",
+                                            WorkspaceMembershipService.Role.viewer))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            var second =
+                    invitations.create(
+                            other,
+                            otherWorkspace,
+                            "recipient@example.test",
+                            WorkspaceMembershipService.Role.viewer);
+            assertThatThrownBy(
+                            () ->
+                                    invitations.accept(
+                                            recipient, "recipient@example.test", second.token()))
+                    .isInstanceOfSatisfying(
+                            org.springframework.web.server.ResponseStatusException.class,
+                            e -> assertThat(e.getStatusCode().value()).isEqualTo(409));
+            var revoked =
+                    invitations.create(
+                            owner,
+                            workspace,
+                            "revoked@example.test",
+                            WorkspaceMembershipService.Role.viewer);
+            invitations.revoke(owner, workspace, revoked.id());
+            assertThatThrownBy(
+                            () ->
+                                    invitations.accept(
+                                            UUID.randomUUID(),
+                                            "revoked@example.test",
+                                            revoked.token()))
+                    .isInstanceOfSatisfying(
+                            org.springframework.web.server.ResponseStatusException.class,
+                            e -> assertThat(e.getStatusCode().value()).isEqualTo(410));
+            jdbc.update(
+                    "INSERT INTO answerbase.staff_access(user_id,role) VALUES(?,'support')", staff);
+            var staffInvite =
+                    invitations.create(
+                            owner,
+                            workspace,
+                            "staff@example.test",
+                            WorkspaceMembershipService.Role.viewer);
+            assertThatThrownBy(
+                            () ->
+                                    invitations.accept(
+                                            staff, "staff@example.test", staffInvite.token()))
+                    .isInstanceOfSatisfying(
+                            org.springframework.web.server.ResponseStatusException.class,
+                            e -> assertThat(e.getStatusCode().value()).isEqualTo(403));
+            var expired =
+                    invitations.create(
+                            owner,
+                            workspace,
+                            "expired@example.test",
+                            WorkspaceMembershipService.Role.viewer);
+            jdbc.update(
+                    "UPDATE answerbase.organization_invitations SET expires_at=now()-interval '1 minute' WHERE id=?",
+                    expired.id());
+            assertThatThrownBy(
+                            () ->
+                                    invitations.accept(
+                                            UUID.randomUUID(),
+                                            "expired@example.test",
+                                            expired.token()))
+                    .isInstanceOfSatisfying(
+                            org.springframework.web.server.ResponseStatusException.class,
+                            e -> assertThat(e.getStatusCode().value()).isEqualTo(410));
+        } finally {
+            jdbc.update("DELETE FROM answerbase.staff_access WHERE user_id=?", staff);
+            cleanup(org);
+            cleanup(otherOrg);
+        }
+    }
+
     private UUID provision(String user, String role, UUID organization) {
         UUID org = organization == null ? UUID.randomUUID() : organization;
         if (organization == null)
@@ -261,6 +392,7 @@ class AuthenticationTests {
     }
 
     private void cleanup(UUID org) {
+        jdbc.update("DELETE FROM answerbase.organization_invitations WHERE organization_id=?", org);
         jdbc.update("DELETE FROM answerbase.questions WHERE organization_id=?", org);
         jdbc.update("DELETE FROM answerbase.workspaces WHERE organization_id=?", org);
         jdbc.update("DELETE FROM answerbase.users WHERE organization_id=?", org);

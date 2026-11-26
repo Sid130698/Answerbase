@@ -1,3 +1,4 @@
+import {JoinInvitation} from './JoinInvitation'
 import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
@@ -13,7 +14,12 @@ function AuthFrame({ children }: { children: ReactNode }) {
   return <div className="auth-layout"><aside className="auth-story"><a className="brand" href="/"><span className="brand-mark" aria-hidden="true">a.</span>Answerbase</a><div><div className="eyebrow">YOUR TEAM'S KNOWLEDGE</div><h1>Good answers<br />start with evidence.</h1><p>Bring your documents together. Ask a question. Go straight to the source.</p></div><p className="auth-footnote">A shared place for knowledge you can trust.</p></aside><main className="auth-main">{children}</main></div>
 }
 
+const incomingInvitation=window.location.hash.match(/^#join\/([A-Za-z0-9_-]{43})$/)?.[1]
+if(incomingInvitation)sessionStorage.setItem('answerbase-invitation',incomingInvitation)
+
 export function AuthGate({ children }: { children: ReactNode }) {
+  const [invitation,setInvitation]=useState(()=>incomingInvitation||sessionStorage.getItem('answerbase-invitation'))
+  useEffect(()=>{const sync=()=>{const token=window.location.hash.match(/^#join\/([A-Za-z0-9_-]{43})$/)?.[1];if(token){sessionStorage.setItem('answerbase-invitation',token);setInvitation(token)}};window.addEventListener('hashchange',sync);return()=>window.removeEventListener('hashchange',sync)},[])
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(Boolean(supabase))
   const [recovery, setRecovery] = useState(false)
@@ -62,6 +68,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (recovery && session) return <AuthFrame><AuthForm recovery onRecovered={() => setRecovery(false)} /></AuthFrame>
   if (!session) return <AuthFrame><AuthForm initialError={error} /></AuthFrame>
   if (!identity) return <AuthFrame><h1>Welcome back</h1>{error ? <><p role="alert" className="auth-error">{error}</p><button className="button primary" onClick={() => { setError(''); setIdentity(null); setRetry(value => value + 1) }}>Try again</button><SignOut /></> : <p role="status" className="auth-description">Opening your workspace…</p>}</AuthFrame>
+  if(invitation)return <JoinInvitation token={invitation}/>;
   if (!identity.organization) return <OrganizationSetup onCreated={() => { setIdentity(null); setRetry(value => value + 1) }} />
   return <IdentityContext.Provider value={identity}>{children}</IdentityContext.Provider>
 }

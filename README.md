@@ -76,6 +76,8 @@ Backend tests use real PostgreSQL: they check Flyway/pgvector bootstrap, JWT sig
 | `infra/` | Container builds and local web proxy |
 | `docs/` | Design index and architecture decisions |
 
+[Organization invitations and member administration](docs/invitations.md) use approved, email-bound enrollment with no hosted SMTP dependency.
+
 Document deletion, opt-in retention and local orphan reconciliation are described in [lifecycle](docs/document-lifecycle.md).
 
 ## Folder imports
@@ -93,7 +95,7 @@ or deployment credentials are configured. The GitHub repository and review PRs a
 
 ## Remaining delivery work
 
-Organization invitations/member administration, workspace model/retrieval settings and PII controls, evaluation and scale/coverage verification remain in progress. Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
+Workspace model/retrieval settings and PII controls, evaluation and scale/coverage verification remain in progress. Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
 
