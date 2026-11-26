@@ -983,6 +983,7 @@ class AuthenticationTests {
                             workspaceService,
                             retrieval,
                             (system, prompt) -> {
+                                assertThat(prompt).doesNotContain("private@example.test");
                                 if (supersedeAttempt.get())
                                     jdbc.update(
                                             "UPDATE answerbase.questions SET execution_token=? WHERE workspace_id=? AND status='running'",
@@ -1019,7 +1020,9 @@ class AuthenticationTests {
                             true);
             var askBody =
                     new QuestionService.Ask(
-                            UUID.randomUUID(), UUID.randomUUID(), "What is the refund window?");
+                            UUID.randomUUID(),
+                            UUID.randomUUID(),
+                            "What is the refund window? Email private@example.test");
             var answer =
                     questionService.ask(UUID.fromString(viewer), workspace, askBody, stage -> {});
             assertThat(answer.answer().abstained()).isFalse();
@@ -1135,6 +1138,44 @@ class AuthenticationTests {
                                     workspace,
                                     anotherQuestion.requestKey()))
                     .isEqualTo("running");
+            var settings =
+                    new WorkspaceSettingsService(
+                            jdbc, workspaceService, retrieval, "", "allowed-local-model");
+            var policy =
+                    new com.answerbase.core.models.WorkspacePolicy(
+                            "keyword", 10, 4, false, "default", 1200, false, true, 1);
+            assertThatThrownBy(() -> settings.save(UUID.fromString(viewer), workspace, policy))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            settings.save(UUID.fromString(owner), workspace, policy);
+            assertThat(settings.get(UUID.fromString(owner), workspace).policy()).isEqualTo(policy);
+            assertThat(
+                            retrieval
+                                    .search(UUID.fromString(owner), workspace, "refunds")
+                                    .options()
+                                    .mode())
+                    .isEqualTo("keyword");
+            assertThatThrownBy(
+                            () ->
+                                    questionService.ask(
+                                            UUID.fromString(owner),
+                                            workspace,
+                                            new QuestionService.Ask(
+                                                    UUID.randomUUID(),
+                                                    UUID.randomUUID(),
+                                                    "Refund window?"),
+                                            stage -> {}))
+                    .isInstanceOfSatisfying(
+                            org.springframework.web.server.ResponseStatusException.class,
+                            e -> assertThat(e.getStatusCode().value()).isEqualTo(429));
+            var invalidModel =
+                    new com.answerbase.core.models.WorkspacePolicy(
+                            "hybrid", 30, 6, false, "unapproved-model", 1800, true, true, 100);
+            assertThatThrownBy(() -> settings.save(UUID.fromString(owner), workspace, invalidModel))
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+            settings.save(
+                    UUID.fromString(owner),
+                    workspace,
+                    com.answerbase.core.models.WorkspacePolicy.DEFAULT);
             var group = documentAccess.create(UUID.fromString(owner), workspace, "HR");
             documentAccess.policy(
                     UUID.fromString(owner),

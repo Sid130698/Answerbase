@@ -95,7 +95,7 @@ or deployment credentials are configured. The GitHub repository and review PRs a
 
 ## Remaining delivery work
 
-Workspace model/retrieval settings and PII controls, evaluation and scale/coverage verification remain in progress. Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
+Evaluation and scale/coverage verification remain in progress. Workspace model/retrieval settings, limited prompt masking and daily request budgets are documented in [workspace settings](docs/workspace-settings.md). Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
 
 See [the design](answerbase-design.html) and [architecture](answerbase-architecture.svg).
 

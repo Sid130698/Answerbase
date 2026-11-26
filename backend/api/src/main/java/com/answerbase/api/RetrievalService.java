@@ -87,8 +87,32 @@ class RetrievalService {
         this.defaults = defaults;
     }
 
+    Options defaults() {
+        return defaults;
+    }
+
     Result search(UUID user, UUID workspace, String raw) {
-        return search(user, workspace, raw, defaults);
+        var fallback =
+                new WorkspacePolicy(
+                        defaults.mode(),
+                        defaults.candidates(),
+                        defaults.topK(),
+                        defaults.rerank(),
+                        "default",
+                        1800,
+                        true,
+                        true,
+                        100);
+        var policy = WorkspacePolicy.read(jdbc, workspace, fallback);
+        return search(
+                user,
+                workspace,
+                raw,
+                new Options(
+                        policy.retrievalMode(),
+                        policy.candidates(),
+                        policy.topK(),
+                        policy.rerank()));
     }
 
     Result search(UUID user, UUID workspace, String raw, Options options) {

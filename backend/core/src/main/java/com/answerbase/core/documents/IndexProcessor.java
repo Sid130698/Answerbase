@@ -46,13 +46,27 @@ public final class IndexProcessor {
                     jdbc.queryForList(
                             "SELECT ordinal,section_path,content FROM answerbase.document_chunks WHERE version_id=? ORDER BY ordinal",
                             id);
+            UUID workspace =
+                    jdbc.queryForObject(
+                            "SELECT workspace_id FROM answerbase.document_versions WHERE id=?",
+                            UUID.class,
+                            id);
+            var policy =
+                    com.answerbase.core.models.WorkspacePolicy.read(
+                            jdbc, workspace, com.answerbase.core.models.WorkspacePolicy.DEFAULT);
             var vectors = new ArrayList<float[]>();
             for (int start = 0; start < rows.size(); start += 8) {
                 var batch = rows.subList(start, Math.min(start + 8, rows.size()));
                 vectors.addAll(
                         model.embed(
                                 batch.stream()
-                                        .map(r -> r.get("section_path") + "\n" + r.get("content"))
+                                        .map(
+                                                r ->
+                                                        (policy.contextLine()
+                                                                        ? r.get("section_path")
+                                                                                + "\n"
+                                                                        : "")
+                                                                + r.get("content"))
                                         .toList(),
                                 false));
             }
