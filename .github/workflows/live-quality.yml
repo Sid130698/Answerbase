@@ -35,8 +35,10 @@ jobs:
           cache-dependency-path: 'app/backend/**/pom.xml'
       - name: Start local models without hosted credentials
         run: |
-          curl --fail --silent --show-error --retry 3 https://ollama.com/install.sh -o /tmp/install-ollama.sh
+          curl --location --fail --silent --show-error --retry 3 https://ollama.com/install.sh -o /tmp/install-ollama.sh
+          test -s /tmp/install-ollama.sh
           sh /tmp/install-ollama.sh
+          for attempt in {1..30}; do curl --fail --silent http://localhost:11434/api/tags && break; sleep 2; done
           ollama pull nomic-embed-text:latest
           ollama pull llama3.1:8b
       - name: Start disposable authenticated application
