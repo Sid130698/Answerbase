@@ -1,0 +1,27 @@
+name: Deploy reviewed release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - name: Deploy main to the provisioned Linux host
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          test -n "$DEPLOY_KEY" && test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER" && test -n "$KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/answerbase && git fetch origin main && git checkout --detach '$RELEASE_SHA' && node scripts/deploy.mjs"

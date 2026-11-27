@@ -1,0 +1,57 @@
+# Use with the repository compose.yml. No development ports are exposed publicly.
+services:
+  db:
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 2g
+  api:
+    ports: !reset []
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      API_DOCS_ENABLED: false
+      GENERATION_PROVIDER: groq
+      OLLAMA_URL: http://ollama:11434
+      RERANKER_URL: http://reranker:8092
+      DOCUMENT_STORAGE_PROVIDER: supabase
+  worker:
+    restart: unless-stopped
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      DOCUMENT_STORAGE_PROVIDER: supabase
+  frontend:
+    ports: !reset []
+    restart: unless-stopped
+  support-frontend:
+    ports: !reset []
+    restart: unless-stopped
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    mem_limit: 3g
+    volumes: [model-data:/root/.ollama]
+  reranker:
+    build:
+      context: .
+      dockerfile: models/reranker/Dockerfile
+    restart: unless-stopped
+    mem_limit: 2g
+    volumes: [reranker-data:/home/model/.cache/huggingface]
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443']
+    environment:
+      CUSTOMER_HOST: ${CUSTOMER_HOST:?Set the customer DNS hostname}
+      SUPPORT_HOST: ${SUPPORT_HOST:?Set the staff DNS hostname}
+      ACME_EMAIL: ${ACME_EMAIL:?Set the certificate contact email}
+    volumes:
+      - ./infra/deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [frontend, support-frontend]
+volumes:
+  model-data:
+  reranker-data:
+  caddy-data:
+  caddy-config:

@@ -98,6 +98,11 @@ export function Ask({ workspace }: { workspace: Workspace }) {
       });
     return () => controller.abort();
   }, [base, conversation, refresh]);
+  useEffect(() => {
+    if (!history.some(item => item.status === "queued" || item.status === "running")) return;
+    const timer = window.setInterval(() => setRefresh(value => value + 1), 5000);
+    return () => window.clearInterval(timer);
+  }, [history]);
   async function ask(e: React.FormEvent) {
     e.preventDefault();
     if (busy || !question.trim()) return;
@@ -392,7 +397,7 @@ export function Ask({ workspace }: { workspace: Workspace }) {
               <li key={item.id}>
                 <button
                   className="text-link"
-                  disabled={busy || item.status === "running"}
+                  disabled={busy || item.status === "running" || item.status === "queued"}
                   onClick={async () => {
                     if (item.status === "failed") {
                       setQuestion(item.question);
@@ -429,7 +434,7 @@ export function Ask({ workspace }: { workspace: Workspace }) {
                   {item.question}
                 </button>{" "}
                 <small>
-                  {item.status === "failed"
+                  {item.status === "queued" ? "Queued for automatic retry" : item.status === "failed"
                     ? "Could not complete · Select to retry"
                     : item.status === "running"
                       ? "In progress"

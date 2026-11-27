@@ -239,6 +239,7 @@ class QuestionService {
             if (published != 1)
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "This attempt expired. Retry the question.");
+            jdbc.update("DELETE FROM answerbase.question_retries WHERE question_id=?", existing);
             org.slf4j.LoggerFactory.getLogger(QuestionService.class)
                     .info(
                             "query_complete id={} workspace={} latency_ms={} abstained={} input_tokens={} output_tokens={}",
@@ -257,15 +258,28 @@ class QuestionService {
                             workspace,
                             (System.nanoTime() - started) / 1_000_000,
                             e.getClass().getSimpleName());
-            jdbc.update(
-                    "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running'",
-                    "Answer service unavailable or access changed. Retry the question.",
-                    existing,
-                    execution);
+            int failed =
+                    jdbc.update(
+                            "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running'",
+                            "Answer service unavailable or access changed. Retry the question.",
+                            existing,
+                            execution);
+            boolean retryable =
+                    e instanceof java.io.IOException
+                            || (e instanceof ResponseStatusException status
+                                    && status.getStatusCode().value() == 503);
+            if (failed == 1 && retryable)
+                jdbc.update(
+                        """
+                INSERT INTO answerbase.question_retries(question_id,organization_id,workspace_id)
+                SELECT id,organization_id,workspace_id FROM answerbase.questions WHERE id=? AND status='failed'
+                ON CONFLICT(question_id) DO NOTHING
+                """,
+                        existing);
             if (e instanceof ResponseStatusException status) throw status;
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "Answer service unavailable. Your question is saved; retry when the model is ready.");
+                    "Answer service unavailable. Your question is saved and queued for automatic retry. Check recent questions for the result.");
         }
     }
 
@@ -374,7 +388,7 @@ class QuestionService {
     List<Map<String, Object>> history(UUID user, UUID workspace, UUID conversation) {
         workspaces.get(user, workspace);
         return jdbc.queryForList(
-                "SELECT id,question,CASE WHEN status='running' AND lease_until<=now() THEN 'failed' ELSE status END AS status,abstained,created_at,error FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND conversation_id=? ORDER BY created_at DESC LIMIT 20",
+                "SELECT id,question,CASE WHEN EXISTS(SELECT 1 FROM answerbase.question_retries r WHERE r.question_id=questions.id AND NOT r.terminal AND r.attempts<3 AND r.expires_at>now()) THEN 'queued' WHEN status='running' AND lease_until<=now() THEN 'failed' ELSE status END AS status,abstained,created_at,error FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND conversation_id=? ORDER BY created_at DESC LIMIT 20",
                 workspace,
                 user,
                 conversation);

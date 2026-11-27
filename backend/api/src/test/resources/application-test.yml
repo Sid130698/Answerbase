@@ -7,3 +7,7 @@ documents:
   storage:
     provider: local
     root: .cache/test-documents
+
+answerbase:
+  question-retries:
+    enabled: false
