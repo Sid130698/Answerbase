@@ -17,6 +17,7 @@ class WorkspaceService {
 
     private final JdbcTemplate jdbc;
     private final OrganizationService organizations;
+    private final int maxWorkspaces;
     private static final String SELECT =
             """
             SELECT w.id, w.organization_id, w.name, m.role, w.created_at
@@ -26,7 +27,15 @@ class WorkspaceService {
             WHERE m.user_id = ?
             """;
 
-    WorkspaceService(JdbcTemplate jdbc, OrganizationService organizations) {
+    WorkspaceService(
+            JdbcTemplate jdbc,
+            OrganizationService organizations,
+            @org.springframework.beans.factory.annotation.Value(
+                            "${WORKSPACE_MAX_PER_ORGANIZATION:50}")
+                    int maxWorkspaces) {
+        if (maxWorkspaces < 1)
+            throw new IllegalArgumentException("Workspace quota must be positive");
+        this.maxWorkspaces = maxWorkspaces;
         this.jdbc = jdbc;
         this.organizations = organizations;
     }
@@ -79,9 +88,10 @@ class WorkspaceService {
                     HttpStatus.BAD_REQUEST,
                     "Use a workspace name of 1–80 characters without control characters");
         }
-        // Serialize creation per user so retries and the quota remain safe under concurrency.
+        // Serialize creation per organization so different admins cannot bypass its quota.
         jdbc.queryForList(
-                "SELECT pg_advisory_xact_lock(hashtextextended(?::text, 0))", user.toString());
+                "SELECT pg_advisory_xact_lock(hashtextextended(?::text, 0))",
+                "workspace-quota:" + organization.id());
         var existing =
                 jdbc.queryForList(
                         "SELECT id, name FROM answerbase.workspaces WHERE created_by = ? AND creation_key = ?",
@@ -98,12 +108,13 @@ class WorkspaceService {
         }
         Integer count =
                 jdbc.queryForObject(
-                        "SELECT count(*) FROM answerbase.workspaces WHERE created_by = ?",
+                        "SELECT count(*) FROM answerbase.workspaces WHERE organization_id = ?",
                         Integer.class,
-                        user);
-        if (count != null && count >= 10) {
+                        organization.id());
+        if (count != null && count >= maxWorkspaces) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "You can create up to 10 workspaces in this preview");
+                    HttpStatus.CONFLICT,
+                    "Your organization has reached its workspace quota. Contact your administrator.");
         }
         UUID id = UUID.randomUUID();
         jdbc.update(

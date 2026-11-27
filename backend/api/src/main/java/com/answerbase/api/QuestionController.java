@@ -66,13 +66,20 @@ class QuestionController {
                                         user,
                                         workspace,
                                         body,
-                                        stage -> send(emitter, "status", Map.of("message", stage)));
+                                        stage -> send(emitter, "status", Map.of("message", stage)),
+                                        claim -> {
+                                            if (grant != null)
+                                                delegation.documentOperation(
+                                                        grant,
+                                                        workspace,
+                                                        "question.claim",
+                                                        id -> id);
+                                            send(emitter, "claim", claim);
+                                        },
+                                        () -> send(emitter, "reset", Map.of()));
                         if (grant != null)
                             delegation.documentOperation(
                                     grant, workspace, "question.complete", id -> id);
-                        // Claims are emitted only after verification, never as untrusted model
-                        // token drafts.
-                        for (var claim : result.answer().claims()) send(emitter, "claim", claim);
                         send(emitter, "answer", result);
                         emitter.complete();
                     } catch (Exception e) {

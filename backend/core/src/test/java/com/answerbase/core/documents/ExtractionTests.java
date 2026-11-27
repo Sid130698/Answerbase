@@ -13,6 +13,39 @@ class ExtractionTests {
     @TempDir Path directory;
 
     @Test
+    void scannedImageWithoutTextFailsWithActionableReason() throws Exception {
+        try (var pdf = new PDDocument();
+                var out = new java.io.ByteArrayOutputStream()) {
+            var page = new PDPage();
+            pdf.addPage(page);
+            var raster =
+                    new java.awt.image.BufferedImage(
+                            600, 400, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            var graphics = raster.createGraphics();
+            graphics.setColor(java.awt.Color.WHITE);
+            graphics.fillRect(0, 0, 600, 400);
+            graphics.setColor(java.awt.Color.BLACK);
+            graphics.drawString("Scanned document with no text layer", 20, 40);
+            graphics.dispose();
+            try (var stream = new PDPageContentStream(pdf, page)) {
+                stream.drawImage(
+                        org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory.createFromImage(
+                                pdf, raster),
+                        0,
+                        0);
+            }
+            pdf.save(out);
+            var error =
+                    org.junit.jupiter.api.Assertions.assertThrows(
+                            java.io.IOException.class,
+                            () ->
+                                    new TextExtractor()
+                                            .extract(out.toByteArray(), "application/pdf"));
+            org.junit.jupiter.api.Assertions.assertTrue(error.getMessage().contains("OCR"));
+        }
+    }
+
+    @Test
     void originalRoundTripAndTraversalProtection() throws Exception {
         var storage = new LocalDocumentStorage(directory);
         byte[] bytes = "Original content".getBytes(StandardCharsets.UTF_8);

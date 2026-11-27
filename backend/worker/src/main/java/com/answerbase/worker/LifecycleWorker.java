@@ -34,7 +34,7 @@ class LifecycleWorker {
 
     @Scheduled(fixedDelayString = "${documents.orphan-poll-ms:86400000}")
     void orphans() throws java.io.IOException {
-        int queued = deletions.reconcileLocal();
+        int queued = deletions.reconcile();
         if (queued > 0)
             org.slf4j.LoggerFactory.getLogger(LifecycleWorker.class)
                     .info("orphan_objects_queued count={}", queued);

@@ -17,10 +17,9 @@ public final class ObjectDeletionProcessor {
         this.storage = storage;
     }
 
-    public int reconcileLocal() throws java.io.IOException {
-        if (!(storage instanceof LocalDocumentStorage local)) return 0;
+    public int reconcile() throws java.io.IOException {
         int queued = 0;
-        for (String key : local.staleKeys(java.time.Duration.ofDays(7))) {
+        for (String key : storage.staleKeys(java.time.Duration.ofDays(7))) {
             String[] parts = key.split("/");
             if (parts.length != 9
                     || !parts[0].equals("organizations")

@@ -10,5 +10,9 @@ public interface DocumentStorage {
 
     void delete(String key) throws IOException;
 
+    default java.util.List<String> staleKeys(java.time.Duration age) throws IOException {
+        return java.util.List.of();
+    }
+
     int MAX_BYTES = 5 * 1024 * 1024;
 }

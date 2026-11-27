@@ -1,0 +1,13 @@
+{
+    email {$ACME_EMAIL}
+}
+{$CUSTOMER_HOST} {
+    encode zstd gzip
+    reverse_proxy frontend:8080 {
+        flush_interval -1
+    }
+}
+{$SUPPORT_HOST} {
+    encode zstd gzip
+    reverse_proxy support-frontend:8080
+}

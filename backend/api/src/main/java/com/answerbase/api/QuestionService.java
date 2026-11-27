@@ -36,6 +36,7 @@ class QuestionService {
     private final GenerationModel generation;
     private final TransactionTemplate tx;
     private final boolean local;
+    private ModelCosts modelCosts = new ModelCosts("");
 
     @Autowired
     QuestionService(
@@ -47,7 +48,8 @@ class QuestionService {
             @Value("${OLLAMA_URL:http://localhost:11434}") String ollama,
             @Value("${GENERATION_URL:https://api.groq.com/openai/v1}") String url,
             @Value("${GENERATION_MODEL:llama3.1:8b}") String model,
-            @Value("${GROQ_API_KEY:}") String key) {
+            @Value("${GROQ_API_KEY:}") String key,
+            @Value("${GENERATION_PRICES_JSON:}") String prices) {
         this(
                 jdbc,
                 workspaces,
@@ -55,6 +57,7 @@ class QuestionService {
                 new ChatModel(provider, provider.equals("ollama") ? ollama : url, model, key),
                 manager,
                 provider.equals("ollama"));
+        this.modelCosts = new ModelCosts(prices);
     }
 
     QuestionService(
@@ -84,6 +87,16 @@ class QuestionService {
  """;
 
     Result ask(UUID user, UUID workspace, Ask body, Consumer<String> stage) {
+        return ask(user, workspace, body, stage, claim -> {}, () -> {});
+    }
+
+    Result ask(
+            UUID user,
+            UUID workspace,
+            Ask body,
+            Consumer<String> stage,
+            Consumer<AnswerVerifier.Claim> claim,
+            Runnable reset) {
         var access = workspaces.get(user, workspace);
         String question = body.question() == null ? "" : body.question().strip();
         if (body.requestKey() == null
@@ -155,13 +168,47 @@ class QuestionService {
                 promptData.put("currentQuestion", mask.apply(question));
                 String prompt = JsonHttp.JSON.writeValueAsString(promptData);
                 for (int attempt = 0; attempt < 2; attempt++) {
+                    if (attempt > 0) reset.run();
+                    var partial =
+                            new VerifiedClaimStream(
+                                    source,
+                                    promptRedactor::restoreJson,
+                                    value ->
+                                            tx.executeWithoutResult(
+                                                    transaction -> {
+                                                        jdbc.queryForList(
+                                                                "SELECT id FROM answerbase.workspaces WHERE id=? FOR SHARE",
+                                                                workspace);
+                                                        workspaces.get(user, workspace);
+                                                        if (!Boolean.TRUE.equals(
+                                                                jdbc.queryForObject(
+                                                                        "SELECT EXISTS(SELECT 1 FROM answerbase.questions WHERE id=? AND execution_token=? AND status='running' AND lease_until>now())",
+                                                                        Boolean.class,
+                                                                        existing,
+                                                                        execution)))
+                                                            throw new ResponseStatusException(
+                                                                    HttpStatus.CONFLICT,
+                                                                    "This attempt expired. Retry the question.");
+                                                        for (var hit : evidence)
+                                                            if (!Boolean.TRUE.equals(
+                                                                    jdbc.queryForObject(
+                                                                            "SELECT answerbase.can_read_document(?,?)",
+                                                                            Boolean.class,
+                                                                            user,
+                                                                            hit.documentId())))
+                                                                throw new ResponseStatusException(
+                                                                        HttpStatus.FORBIDDEN,
+                                                                        "Source access changed. Ask again with current permissions.");
+                                                        claim.accept(value);
+                                                    }));
                     var generated =
                             selectedModel.generate(
                                     SYSTEM,
                                     prompt
                                             + (attempt == 1
                                                     ? "\nYour previous response failed citation validation. Use only exact passage ids and exact quotes; otherwise abstain."
-                                                    : ""));
+                                                    : ""),
+                                    partial);
                     input += generated.inputTokens();
                     output += generated.outputTokens();
                     model = generated.model();
@@ -177,6 +224,7 @@ class QuestionService {
                     }
                 }
             }
+            if (verified.abstained()) reset.run();
             if (verified.abstained() && message.isEmpty())
                 message = "I could not find this in the documents.";
             if (!verified.abstained()) message = "";
@@ -207,7 +255,7 @@ class QuestionService {
                 found.embeddingModel(),
                 input,
                 output,
-                local ? 0.0 : null,
+                local ? Double.valueOf(0) : modelCosts.estimate(model, input, output),
                 JsonHttp.JSON.writeValueAsString(trace),
                 existing,
                 execution
@@ -239,6 +287,7 @@ class QuestionService {
             if (published != 1)
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "This attempt expired. Retry the question.");
+            jdbc.update("DELETE FROM answerbase.question_retries WHERE question_id=?", existing);
             org.slf4j.LoggerFactory.getLogger(QuestionService.class)
                     .info(
                             "query_complete id={} workspace={} latency_ms={} abstained={} input_tokens={} output_tokens={}",
@@ -257,15 +306,30 @@ class QuestionService {
                             workspace,
                             (System.nanoTime() - started) / 1_000_000,
                             e.getClass().getSimpleName());
-            jdbc.update(
-                    "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running'",
-                    "Answer service unavailable or access changed. Retry the question.",
-                    existing,
-                    execution);
+            int failed =
+                    jdbc.update(
+                            "UPDATE answerbase.questions SET status='failed',error=?,completed_at=now(),lease_until=NULL WHERE id=? AND execution_token=? AND status='running'",
+                            "Answer service unavailable or access changed. Retry the question.",
+                            existing,
+                            execution);
+            boolean retryable =
+                    e instanceof java.io.IOException
+                            || (e instanceof ResponseStatusException status
+                                    && status.getStatusCode().value() == 503);
+            if (failed == 1 && retryable)
+                jdbc.update(
+                        """
+                INSERT INTO answerbase.question_retries(question_id,organization_id,workspace_id)
+                SELECT id,organization_id,workspace_id FROM answerbase.questions WHERE id=? AND status='failed'
+                ON CONFLICT(question_id) DO NOTHING
+                """,
+                        existing);
             if (e instanceof ResponseStatusException status) throw status;
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "Answer service unavailable. Your question is saved; retry when the model is ready.");
+                    retryable && failed == 1
+                            ? "Answer service unavailable. Your question is saved and queued for automatic retry. Check recent questions for the result."
+                            : "Answer service unavailable. Retry the question.");
         }
     }
 
@@ -374,7 +438,7 @@ class QuestionService {
     List<Map<String, Object>> history(UUID user, UUID workspace, UUID conversation) {
         workspaces.get(user, workspace);
         return jdbc.queryForList(
-                "SELECT id,question,CASE WHEN status='running' AND lease_until<=now() THEN 'failed' ELSE status END AS status,abstained,created_at,error FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND conversation_id=? ORDER BY created_at DESC LIMIT 20",
+                "SELECT id,question,CASE WHEN EXISTS(SELECT 1 FROM answerbase.question_retries r WHERE r.question_id=questions.id AND NOT r.terminal AND r.attempts<3 AND r.expires_at>now()) THEN 'queued' WHEN status='running' AND lease_until<=now() THEN 'failed' ELSE status END AS status,abstained,created_at,error FROM answerbase.questions WHERE workspace_id=? AND user_id=? AND conversation_id=? ORDER BY created_at DESC LIMIT 20",
                 workspace,
                 user,
                 conversation);

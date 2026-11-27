@@ -318,6 +318,16 @@ class DocumentService {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "This workspace has reached its storage quota. Remove unused documents or contact your administrator.");
+        jdbc.queryForList(
+                "SELECT pg_advisory_xact_lock(hashtextextended('document-global-storage-quota',0))");
+        long totalUsed =
+                jdbc.queryForObject(
+                        "SELECT COALESCE(sum(byte_size),0) FROM answerbase.document_versions",
+                        Long.class);
+        if (limits.exceedsTotalStorage(totalUsed, bytes.length))
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Document storage capacity has been reached. Contact your administrator.");
         int number = 1;
         if (document == null) {
             document = UUID.randomUUID();

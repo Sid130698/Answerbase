@@ -84,20 +84,13 @@ Document deletion, opt-in retention and local orphan reconciliation are describe
 
 An incremental [Notion-export folder connector](docs/folder-sync.md) uploads supported files and creates versions for changed content. It uses normal workspace permissions and a private local sync manifest.
 
-## Target deployment
+## Deployment and release evidence
 
-Frontend: Cloudflare Pages, root `frontend`, build `npm run build`, output `dist`.
-API and worker: separate containers on one VM, subject to free-capacity availability.
-Data/auth: Supabase. Public email signup requires an SMTP provider; provider selection is pending.
+The prepared free-pilot topology uses an Oracle Always Free ARM VM for the Java services, PostgreSQL/pgvector, local embeddings/reranking and two independent frontend containers. Supabase provides authentication and private originals; Groq provides generation; Brevo is the proposed SMTP provider. Caddy serves separate HTTPS customer and staff origins. See [account setup, Terraform, deployment, monitoring and recovery](docs/free-deployment.md).
 
-The local Compose stack is for development, not a hardened public deployment. No cloud accounts, paid resources,
-or deployment credentials are configured. The GitHub repository and review PRs are configured. CI has no deploy step and makes no LLM calls.
+Production configuration is supplied and validated locally. Actual provisioning, public TLS, hosted email/storage/model calls and free-capacity availability require provider accounts. The application does not need paid model credentials for local development or CI. Live CI compares baseline and candidate applications against the same representative 14-case subset using disposable local models; manual workflow runs use all 70 cases.
 
-## Remaining delivery work
-
-Shared-core coverage is measured at 77.96% (566/726 lines). Evaluation and scale verification remain in progress; see [the local evaluation instructions](evals/README.md). Workspace model/retrieval settings, limited prompt masking and daily request budgets are documented in [workspace settings](docs/workspace-settings.md). Public deployment and external user evidence require accounts and participation. Follow [the acceptance checklist](docs/prd-checklist.md); do not treat this preview as a completed production release.
-
-See [the current unified runtime diagram](answerbase-runtime-design.html), [measured local results](docs/local-evaluation-results.md), and the earlier [design](answerbase-design.html).
+See the [90-second walkthrough](docs/walkthrough.html), [unified runtime diagram](answerbase-runtime-design.html), [PRD acceptance record](docs/prd-checklist.md), [data boundaries](docs/data-boundaries.md), and [tester session](docs/tester-session.html). Human gold review, external participants and measured performance targets are acceptance gates; passing builds does not substitute for them.
 
 ## API documentation
 
@@ -131,4 +124,4 @@ These are **AI-authored candidate fixtures, not human-reviewed gold or a represe
 | Hybrid + reranker, smaller chunks | 100% | 0.962 |
 | Hybrid + reranker, no context line | 100% | 0.962 |
 
-The fresh complete-answer run finished 70 requests without request errors: 17/17 expected abstentions, 2/53 false abstentions. p50 **5.264s**, p95 **13.107s**, and one stream's first verified claim **8.422s** all miss the respective latency targets. Literal quote integrity was 100%; that is not semantic citation accuracy. Human-reviewed correctness/faithfulness remain unmeasured. Known local API charges were **$0**, excluding hardware and electricity. See [full results and failures](docs/local-evaluation-results.md), [machine-readable measurements](docs/local-results.json), and [evaluation commands](evals/README.md).
+The earlier six-document complete-answer run finished 70 requests without request errors: 17/17 expected abstentions, 2/53 false abstentions. p50 **5.264s**, p95 **13.107s**, and one stream's first verified claim **8.422s** all miss the respective latency targets. Literal quote integrity was 100%; that is not semantic citation accuracy. Human-reviewed correctness/faithfulness remain unmeasured. Known local API charges were **$0**, excluding hardware and electricity. See [full results and failures](docs/local-evaluation-results.md), [machine-readable measurements](docs/local-results.json), and [evaluation commands](evals/README.md).

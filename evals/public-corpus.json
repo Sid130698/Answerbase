@@ -1,0 +1,15 @@
+{
+  "license": "NIST SP publications are not subject to copyright in the United States; retain attribution. No NIST endorsement is implied.",
+  "licenseSource": "https://www.nist.gov/itl/publications-0/nist-special-publication-800-series-general-information",
+  "documents": [
+    {"file":"incident-response.pdf","title":"NIST SP 800-61r3 (April 2025)","url":"https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-61r3.pdf","sha256":"e5593d6bb85daecec7e8d9549400c7b3473bcc3f06e469c82218073afa7fba2d"},
+    {"file":"secure-development.pdf","title":"NIST SP 800-218 SSDF 1.1 (February 2022)","url":"https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-218.pdf","sha256":"617746e553a9e2da49bfbd4eef0dfc3094758a39b869314e4173ac36605cde22"},
+    {"file":"cloud-definition.pdf","title":"NIST SP 800-145 (September 2011)","url":"https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-145.pdf","sha256":"7b0c1a9fdfc67218b8ba2098f448c100c27070db91736b3c87fed63bfa21d418"}
+  ],
+  "cases": [
+    {"id":"public-table-01","question":"In NIST SP 800-61r3 Table 1, which CSF functions correspond to Preparation?","file":"incident-response.pdf","terms":["Govern","Identify","Protect"],"difficulty":"medium","candidateAnswer":"Govern, Identify (all Categories), and Protect.","reviewStatus":"pending-human-review"},
+    {"id":"public-table-02","question":"What does RC.RP-03 require before using backups for restoration?","file":"incident-response.pdf","terms":["integrity","backup"],"difficulty":"medium","candidateAnswer":"Verify the integrity of backups and other restoration assets before using them, checking for compromise and corruption.","reviewStatus":"pending-human-review"},
+    {"id":"public-fact-01","question":"How many essential characteristics, service models, and deployment models does the NIST definition of cloud computing specify?","file":"cloud-definition.pdf","terms":["five","three","four"],"difficulty":"easy","candidateAnswer":"Five essential characteristics, three service models, and four deployment models.","reviewStatus":"pending-human-review"},
+    {"id":"public-fact-02","question":"What is the purpose of the Secure Software Development Framework?","file":"secure-development.pdf","terms":["vulnerabil"],"difficulty":"easy","candidateAnswer":"Integrate secure development practices into the SDLC to reduce released vulnerabilities, mitigate exploitation impact, and address root causes.","reviewStatus":"pending-human-review"}
+  ]
+}

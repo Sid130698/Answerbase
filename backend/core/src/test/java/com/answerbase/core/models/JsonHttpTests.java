@@ -11,6 +11,47 @@ import org.junit.jupiter.api.Test;
 
 class JsonHttpTests {
     @Test
+    void deliversUtf8LinesBeforeCompletionAndStillEnforcesDeadline() throws Exception {
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        var received = new java.util.concurrent.CountDownLatch(1);
+        server.createContext(
+                "/stream",
+                exchange -> {
+                    exchange.sendResponseHeaders(200, 0);
+                    try (var out = exchange.getResponseBody()) {
+                        byte[] bytes = "data: café\n".getBytes(StandardCharsets.UTF_8);
+                        for (byte next : bytes) {
+                            out.write(next);
+                            out.flush();
+                        }
+                        try {
+                            assertTrue(received.await(2, java.util.concurrent.TimeUnit.SECONDS));
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                        out.write("data: done\n".getBytes(StandardCharsets.UTF_8));
+                    }
+                });
+        server.start();
+        try {
+            var lines = new java.util.ArrayList<String>();
+            new JsonHttp()
+                    .stream(
+                            "http://127.0.0.1:" + server.getAddress().getPort() + "/stream",
+                            Map.of(),
+                            "",
+                            5,
+                            line -> {
+                                lines.add(line);
+                                received.countDown();
+                            });
+            assertEquals(java.util.List.of("data: café", "data: done"), lines);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     void handlesJsonAndRejectsHttpFailureAndOversizeChunkedResponse() throws Exception {
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext(

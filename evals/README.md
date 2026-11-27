@@ -4,7 +4,7 @@
 
 ## Run
 
-Start `make local` and the optional cross-encoder described in `docs/retrieval.md`. Use an organization owner/admin local test account. Put its credentials in a private, ignored JSON file shaped as `{"client":{"email":"...","password":"..."}}`; do not commit it. Set `TEST_ACCOUNT_FILE` to that path. The existing developer smoke-account file is the default. The runner only permits loopback API/auth URLs, uses ordinary authenticated routes, and creates a dedicated evaluation workspace. It never overwrites customer documents. Manifests in `.cache/` reuse that workspace and fixture uploads for the same account/dataset/variant. Each variant consumes one of the preview account's ten workspace slots.
+Start `make local` and the optional cross-encoder described in `docs/retrieval.md`. Use an organization owner/admin local test account. Put its credentials in a private, ignored JSON file shaped as `{"client":{"email":"...","password":"..."}}`; do not commit it. Set `TEST_ACCOUNT_FILE` to that path. The existing developer smoke-account file is the default. The runner only permits loopback API/auth URLs, uses ordinary authenticated routes, and creates a dedicated evaluation workspace. It never overwrites customer documents. Manifests in `.cache/` reuse that workspace and fixture uploads for the same account/dataset/variant. Each variant consumes one workspace under the configurable organization-wide quota (default 50).
 
 ```sh
 node --test evals/*.test.mjs
@@ -26,7 +26,7 @@ Retrieval: hit@5, reciprocal rank and all-gold-at-5 require the annotated docume
 
 Each answer run exports a CSV with blank human-grade fields. Reviewers should read the JSON evidence and answer before filling it. Do not use the machine proxy as a substitute. A candidate dataset change invalidates previous baselines.
 
-Set `EVAL_BASELINE=path/to/reviewed-report.json` to fail on a drop greater than three percentage points in comparable machine metrics (or a >3pp increase in false abstention). Dataset hash, configuration and case IDs/order must match; request failures and missing previously present metrics fail closed. CI tests the dataset contract and gate mechanics without live model calls. **A live quality-regression CI job is not enabled yet:** it needs an approved baseline and a model-equipped trusted runner. A unit test of gate mechanics is not evidence of model quality.
+Set `EVAL_BASELINE=path/to/reviewed-report.json` to fail on a drop greater than three percentage points in comparable machine metrics (or a >3pp increase in false abstention). Dataset hash, configuration and case IDs/order must match; request failures and missing previously present metrics fail closed. CI tests the dataset contract and also runs `live-quality.yml`: 14-case answer/judge evaluations spanning every category on the PR base and candidate (all 70 cases on manual workflow runs), with the same current harness and model digests on disposable GitHub runners. No hosted model credentials are exposed to PR code. This detects machine-scored regressions; neither revision becomes human-approved gold merely by passing.
 
 ## Corpus provenance
 
@@ -39,7 +39,7 @@ node evals/judge.mjs evals/reports/my-answer-run.json
 node evals/check-regression.mjs BASELINE.json CURRENT.json BASELINE.judge.json CURRENT.judge.json
 ```
 
-The judge uses local Ollama (`EVAL_JUDGE_MODEL`, default `llama3.1:8b`) and grades correctness, faithfulness and citation support against the question, annotated reference documents and returned evidence. It checks the source dataset hash and binds grades to the exact answer-report hash. Grades are labeled `llmJudge*`; they are not human-verified correctness. Using the same model family for generation and judging can introduce correlated bias. Each completed grading run exports a deterministic 20% review sample with blank human fields. A reviewer must inspect and grade that sample and calculate agreement before these scores can support PRD acceptance. Failed answer requests remain ungraded errors, not silently successful abstentions. The comparison command rejects incomplete/mismatched reports and >3-point drops, including model-judged correctness when both judge reports are supplied. It is available locally; no untrusted PR can trigger a live model judge in CI.
+The judge uses local Ollama (`EVAL_JUDGE_MODEL`, default `llama3.1:8b`) and grades correctness, faithfulness and citation support against the question, annotated reference documents and returned evidence. It checks the source dataset hash and binds grades to the exact answer-report hash. Grades are labeled `llmJudge*`; they are not human-verified correctness. Using the same model family for generation and judging can introduce correlated bias. Each completed grading run exports a deterministic 20% review sample with blank human fields. A reviewer must inspect and grade that sample and calculate agreement before these scores can support PRD acceptance. Failed answer requests remain ungraded errors, not silently successful abstentions. The comparison command rejects incomplete/mismatched reports and >3-point drops, including model-judged correctness when both judge reports are supplied. It is available locally and runs in isolated CI with local models and no hosted provider credentials.
 
 ## Live stream and restricted-source probes
 
@@ -50,3 +50,13 @@ The judge uses Ollama's [JSON-schema structured output format](https://github.co
 The current judge asks for a supported-citation **count** bounded by the actual number of citations, then the evaluator computes citation accuracy. This avoids trusting model arithmetic or accepting out-of-range percentages. To generate a review packet that withholds machine grades, run `node evals/review-packet.mjs ANSWERS.json JUDGE.json`. Fill the matching CSV independently before comparing with the model's grades. `EVAL_JUDGE_IDS` and `EVAL_JUDGE_REPORT` support bounded judge debugging; partial runs cannot pass the full-report regression check.
 
 After a person completes every row in the exported sample, `node evals/human-review.mjs JUDGE.json REVIEW.csv` validates the exact sample, required reviewer/grade fields and citation-score bounds, then writes a separate agreement report. Blank grades, missing/duplicate/substituted cases and incomplete judge runs fail closed. The report distinguishes human sample correctness from full-set machine grades; it never fills in human opinions automatically. Keep reviewer identities and completed review files in the ignored report directory unless explicitly approved for publication.
+
+## Release corpus and scale runs
+
+All 70 cases now include draft reference answers and difficulty labels. These remain AI-authored drafts pending human review. The five comparison questions require two distinct source documents. Changes to the 13-document synthetic corpus invalidate older report hashes.
+
+- `node evals/public-corpus.mjs`: downloads three checksum-pinned NIST PDFs, uploads through the API, waits for real extraction/embedding, and runs four answer/page-reference probes. Source and reuse references are in `public-corpus.json`.
+- `node evals/handbook.mjs`: imports the pinned GitLab support handbook Markdown files with source attribution and the repository license, then checks retrieval. It uses its own workspace; no customer documents are overwritten.
+- `node evals/ingestion-scale.mjs`: uploads 2,000 synthetic documents and waits for 50,000 actual worker-created embeddings, then executes 20 searches at concurrency four. This replaces the earlier SQL-only capacity probe as pipeline evidence. Synthetic repeated text is not a semantic benchmark.
+
+The scale run needs `DOCUMENT_MAX_VERSIONS=3000` and sufficient byte quota; use an isolated local benchmark workspace. Reports and downloaded corpora stay ignored. `EVAL_INDEX_WAIT_SECONDS=3600` accommodates a busy indexing queue. Run generation/stream latency probes without concurrent indexing or judging for an uncontended measurement. A completed report, rather than the existence of a script, is evidence of execution.

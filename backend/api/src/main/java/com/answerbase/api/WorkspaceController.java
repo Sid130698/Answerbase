@@ -42,7 +42,7 @@ class WorkspaceController {
     @Operation(
             summary = "Create a workspace with yourself as admin",
             description =
-                    "Organization owner/admin only; organization is resolved from the account, never the request. Requires a UUID Idempotency-Key header. Reuse it with the same name to safely retry (200); a new workspace returns 201. A changed name with the same key or the preview limit of 10 created workspaces returns 409. Invalid input returns 400.")
+                    "Organization owner/admin only; organization is resolved from the account, never the request. Requires a UUID Idempotency-Key header. Reuse it with the same name to safely retry (200); a new workspace returns 201. A changed name with the same key or the configured organization workspace quota returns 409. Invalid input returns 400.")
     ResponseEntity<WorkspaceService.Workspace> create(
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader("Idempotency-Key") UUID key,

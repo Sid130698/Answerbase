@@ -1,0 +1,11 @@
+[Unit]
+Description=Deploy reviewed and checked Answerbase main
+After=docker.service network-online.target
+Requires=docker.service
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/answerbase
+ExecStart=/usr/local/bin/node scripts/update-release.mjs
+TimeoutStartSec=1800
+UMask=0077
