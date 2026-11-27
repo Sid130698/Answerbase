@@ -6,7 +6,7 @@ test('candidate dataset has the required composition and exact source anchors',(
  const {cases}=JSON.parse(readFileSync(new URL('./cases.json',import.meta.url)))
  assert.equal(new Set(cases.map(c=>c.id)).size,70)
  assert.deepEqual(Object.fromEntries(['fact','synthesis','table','comparison','followup','unanswerable','adversarial'].map(k=>[k,cases.filter(c=>c.category===k).length])),{fact:20,synthesis:10,table:10,comparison:5,followup:5,unanswerable:10,adversarial:10})
- for(const c of cases){assert.equal(c.reviewStatus,'pending-human-review');assert.equal(c.expectedAbstention,c.gold.length===0);if(c.parent)assert.ok(cases.some(p=>p.id===c.parent));for(const g of c.gold)assert.ok(readFileSync(new URL(`./corpus/${g.file}`,import.meta.url),'utf8').includes(g.quote),c.id)}
+ for(const c of cases){assert.ok(['easy','medium','hard'].includes(c.difficulty));assert.ok(typeof c.goldAnswerDraft==='string'&&c.goldAnswerDraft.length>10);if(c.category==='comparison')assert.ok(new Set(c.gold.map(g=>g.file)).size>=2);assert.equal(c.reviewStatus,'pending-human-review');assert.equal(c.expectedAbstention,c.gold.length===0);if(c.parent)assert.ok(cases.some(p=>p.id===c.parent));for(const g of c.gold)assert.ok(readFileSync(new URL(`./corpus/${g.file}`,import.meta.url),'utf8').includes(g.quote),c.id)}
 })
 test('retrieval requires both authorized document identity and exact gold text',()=>{
  const t={gold:[{file:'a',quote:'refund 30 days'},{file:'b',quote:'monthly 7 days'}]}
