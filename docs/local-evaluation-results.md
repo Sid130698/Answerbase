@@ -1,6 +1,6 @@
-# Local evaluation results — 2026-11-26
+# Historical local evaluation results — 2026-11-26
 
-These measurements use a small, AI-authored candidate corpus, **not a human-reviewed gold benchmark**. It contains fictional Acorn policies, pricing and security documents, an archived contradiction, an injected instruction, and two attributed public science facts. The public-reference component is too small to represent a large messy document collection. A larger licensed corpus, human gold answers/difficulty labels and manual grading remain acceptance work.
+These measurements use a small, AI-authored candidate corpus, **not a human-reviewed gold benchmark**. It contains fictional Acorn policies, pricing and security documents, an archived contradiction, an injected instruction, and two attributed public science facts. The public-reference component is too small to represent a large messy document collection. This historical run predates the expanded public corpus and draft gold/difficulty annotations added in PR #16. Human gold approval and manual grading remain acceptance work; see the current PRD checklist.
 
 Host: Apple M5, 10 logical CPUs, 16 GiB memory. Generation: local Ollama `llama3.1:8b` Q4_K_M. Embeddings: `nomic-embed-text:latest`, 768 dimensions. Reranker: local `cross-encoder/ms-marco-MiniLM-L6-v2`. API/worker/database run in Docker. These are developer-machine measurements, not a hosted capacity guarantee.
 

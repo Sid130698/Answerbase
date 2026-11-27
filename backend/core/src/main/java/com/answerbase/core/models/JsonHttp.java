@@ -89,6 +89,7 @@ public final class JsonHttp {
             pending.cancel(true);
             throw new IOException("Model response deadline exceeded", e);
         } catch (ExecutionException e) {
+            if (e.getCause() instanceof UncheckedIOException io) throw io.getCause();
             if (e.getCause() instanceof RuntimeException runtime) throw runtime;
             throw new IOException("Model stream failed", e.getCause());
         } catch (InterruptedException e) {

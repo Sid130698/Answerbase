@@ -1022,7 +1022,7 @@ class AuthenticationTests {
                                         json, "test-model", 10, 20);
                             },
                             transactionManager,
-                            true);
+                            false);
             var askBody =
                     new QuestionService.Ask(
                             UUID.randomUUID(),
@@ -1032,6 +1032,7 @@ class AuthenticationTests {
                     questionService.ask(UUID.fromString(viewer), workspace, askBody, stage -> {});
             assertThat(answer.answer().abstained()).isFalse();
             assertThat(answer.inputTokens()).isEqualTo(10);
+            assertThat(answer.costUsd()).isNull(); // Unknown hosted model must remain unpriced.
             assertThat(
                             questionService
                                     .ask(UUID.fromString(viewer), workspace, askBody, stage -> {})

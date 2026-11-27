@@ -8,8 +8,9 @@ const sql = `SELECT json_build_object(
  'failedIngestion', (SELECT count(*) FROM answerbase.ingestion_jobs WHERE state='failed'),
  'failedIndexing', (SELECT count(*) FROM answerbase.index_jobs WHERE state='failed'),
  'stalledIngestion', (SELECT count(*) FROM answerbase.ingestion_jobs WHERE state='queued' AND available_at<now()-interval '5 minutes'),
+ 'stalledIndexing', (SELECT count(*) FROM answerbase.index_jobs WHERE state='queued' AND available_at<now()-interval '5 minutes'),
  'expiredAnswers', (SELECT count(*) FROM answerbase.questions WHERE status='running' AND lease_until<now()),
- 'exhaustedAnswers', (SELECT count(*) FROM answerbase.question_retries WHERE terminal OR expires_at<now() OR (attempts>=3 AND lease_until<now())),
+ 'exhaustedAnswers', (SELECT count(*) FROM answerbase.question_retries WHERE terminal OR expires_at<now() OR (attempts>=3 AND (lease_until IS NULL OR lease_until<now()))),
  'failedObjectDeletions', (SELECT count(*) FROM answerbase.object_deletions WHERE attempts>0),
  'answerP95Ms', (SELECT percentile_cont(.95) WITHIN GROUP (ORDER BY (trace->>'totalMs')::double precision) FROM answerbase.questions WHERE status='complete' AND created_at>now()-interval '1 hour')
 )`

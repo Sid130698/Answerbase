@@ -63,7 +63,8 @@ public final class ChatModel implements GenerationModel {
                     }
                     var part = JsonHttp.JSON.readTree(payload);
                     if (part.has("error"))
-                        throw new IllegalArgumentException("Model returned a streaming error");
+                        throw new java.io.UncheckedIOException(
+                                new IOException("Model returned a streaming error"));
                     if (part.has("model")) actualModel[0] = part.path("model").asText();
                     String delta =
                             local

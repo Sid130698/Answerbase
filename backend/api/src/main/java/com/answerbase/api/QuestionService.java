@@ -36,6 +36,7 @@ class QuestionService {
     private final GenerationModel generation;
     private final TransactionTemplate tx;
     private final boolean local;
+    private ModelCosts modelCosts = new ModelCosts("");
 
     @Autowired
     QuestionService(
@@ -47,7 +48,8 @@ class QuestionService {
             @Value("${OLLAMA_URL:http://localhost:11434}") String ollama,
             @Value("${GENERATION_URL:https://api.groq.com/openai/v1}") String url,
             @Value("${GENERATION_MODEL:llama3.1:8b}") String model,
-            @Value("${GROQ_API_KEY:}") String key) {
+            @Value("${GROQ_API_KEY:}") String key,
+            @Value("${GENERATION_PRICES_JSON:}") String prices) {
         this(
                 jdbc,
                 workspaces,
@@ -55,6 +57,7 @@ class QuestionService {
                 new ChatModel(provider, provider.equals("ollama") ? ollama : url, model, key),
                 manager,
                 provider.equals("ollama"));
+        this.modelCosts = new ModelCosts(prices);
     }
 
     QuestionService(
@@ -252,7 +255,7 @@ class QuestionService {
                 found.embeddingModel(),
                 input,
                 output,
-                local ? 0.0 : null,
+                local ? Double.valueOf(0) : modelCosts.estimate(model, input, output),
                 JsonHttp.JSON.writeValueAsString(trace),
                 existing,
                 execution
