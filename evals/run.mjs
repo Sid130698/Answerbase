@@ -53,7 +53,7 @@ for(const [file,content] of Object.entries(corpus)){
  const item=manifest.documents[file]
  if(!item.version){const body=new FormData();body.set('file',new Blob([content]),file);const version=await api(`${path}/documents`,{method:'POST',headers:{'Idempotency-Key':item.key},body});Object.assign(item,{version:version.id,id:version.documentId});saveManifest()}
  let indexed=false
- for(let i=0;i<120;i++){const versions=await api(`${path}/documents/${item.id}/versions`);const v=versions.find(v=>v.id===item.version);if(v?.indexStatus==='indexed'){indexed=true;break}if(v?.status==='failed'||v?.indexStatus==='failed')throw new Error(`Fixture processing failed: ${file}`);await sleep(1000)}
+ for(let i=0;i<Number(process.env.EVAL_INDEX_WAIT_SECONDS||600);i++){const versions=await api(`${path}/documents/${item.id}/versions`);const v=versions.find(v=>v.id===item.version);if(v?.indexStatus==='indexed'){indexed=true;break}if(v?.status==='failed'||v?.indexStatus==='failed')throw new Error(`Fixture processing failed: ${file}`);await sleep(1000)}
  if(!indexed)throw new Error(`Fixture indexing timed out: ${file}`)
 }
 const documents=Object.fromEntries(Object.entries(manifest.documents).map(([file,item])=>[file,item.id]))

@@ -1,0 +1,6 @@
+region = "your-home-region"
+compartment_id = "ocid1.compartment..."
+availability_domain = "your-home-region-availability-domain"
+ubuntu_arm_image_id = "ocid1.image...Ubuntu-24.04-aarch64"
+ssh_public_key = "ssh-ed25519 YOUR_PUBLIC_KEY"
+administrator_cidr = "203.0.113.10/32"

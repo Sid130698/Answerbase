@@ -1392,7 +1392,7 @@ class AuthenticationTests {
                                 new org.springframework.transaction.support.TransactionTemplate(
                                         transactionManager),
                                 orphanStorage);
-                assertThat(orphanWorker.reconcileLocal()).isEqualTo(1);
+                assertThat(orphanWorker.reconcile()).isEqualTo(1);
                 var unavailableStorage =
                         new com.answerbase.core.documents.DocumentStorage() {
                             public void put(String key, byte[] bytes, String type) {}

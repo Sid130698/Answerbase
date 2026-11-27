@@ -79,8 +79,8 @@ class OpenApiConfiguration {
                                 .title("Answerbase API")
                                 .version("0.1.0")
                                 .description(
-                                        "Implemented endpoints: public health probes and authenticated identity. "
-                                                + "Registration and login are provided directly by Supabase Auth. Workspace, ingestion, and question-answering APIs are not implemented yet. "
+                                        "Organization and workspace access, document ingestion and lifecycle, cited answers, feedback, administration, and staff support delegation. "
+                                                + "Registration and login are provided directly by Supabase Auth. "
                                                 + "Health status does not imply authorization to access application data."))
                 .servers(List.of(new Server().url("/")));
     }

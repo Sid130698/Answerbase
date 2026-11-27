@@ -1,0 +1,8 @@
+[Unit]
+Description=Check for a reviewed Answerbase release every five minutes
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=5min
+Persistent=true
+[Install]
+WantedBy=timers.target

@@ -11,7 +11,7 @@ concurrency:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,6 @@ jobs:
           JUDGE_TIMEOUT_MS: 600000
           EVAL_MODE: answers
           EVAL_VARIANT: hybrid
-          EVAL_IDS: fact-01,fact-02,table-01,synthesis-01,unanswerable-01,unanswerable-02,adversarial-01,adversarial-02
           EVAL_REPORT: evals/reports/answers.json
         run: |
           node evals/run.mjs

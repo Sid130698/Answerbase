@@ -45,7 +45,7 @@ jobs:
           PYTHON
   backend:
     needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -74,7 +74,7 @@ jobs:
         run: python3 scripts/check-coverage.py
   frontend:
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -91,7 +91,7 @@ jobs:
 
   support-frontend:
     needs: changes
-    if: needs.changes.outputs.support-frontend == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.support-frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -124,3 +124,30 @@ jobs:
         with:
           node-version: '24'
       - run: node --test evals/*.test.mjs
+
+  deployment-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check operational scripts and production network configuration
+        env:
+          CUSTOMER_HOST: customer.example.test
+          SUPPORT_HOST: support.example.test
+          ACME_EMAIL: operator@example.test
+          POSTGRES_PASSWORD: configuration-validation-only
+        run: |
+          for file in scripts/*.mjs evals/*.mjs; do node --check "$file"; done
+          docker compose -f compose.yml -f infra/deploy/compose.yml config --quiet
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+      - name: Validate infrastructure without provisioning
+        working-directory: infra/terraform
+        run: |
+          terraform fmt -check
+          terraform init -backend=false
+          terraform validate

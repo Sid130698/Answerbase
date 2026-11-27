@@ -65,6 +65,7 @@ answerbase:
 documents:
   limits:
     max-versions: ${DOCUMENT_MAX_VERSIONS:200}
+    max-total-bytes: ${DOCUMENT_TOTAL_MAX_BYTES:838860800}
     max-bytes: ${DOCUMENT_MAX_BYTES:104857600}
   storage:
     provider: ${DOCUMENT_STORAGE_PROVIDER:local}

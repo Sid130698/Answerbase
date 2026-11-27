@@ -1,10 +1,17 @@
 # Use with the repository compose.yml. No development ports are exposed publicly.
+x-logging: &bounded-logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 services:
   db:
+    logging: *bounded-logs
     ports: !reset []
     restart: unless-stopped
     mem_limit: 2g
   api:
+    logging: *bounded-logs
     ports: !reset []
     restart: unless-stopped
     mem_limit: 1g
@@ -15,29 +22,55 @@ services:
       RERANKER_URL: http://reranker:8092
       DOCUMENT_STORAGE_PROVIDER: supabase
   worker:
+    logging: *bounded-logs
     restart: unless-stopped
     environment:
       OLLAMA_URL: http://ollama:11434
       DOCUMENT_STORAGE_PROVIDER: supabase
   frontend:
+    logging: *bounded-logs
     ports: !reset []
     restart: unless-stopped
   support-frontend:
+    logging: *bounded-logs
     ports: !reset []
     restart: unless-stopped
   ollama:
+    logging: *bounded-logs
     image: ollama/ollama:latest
     restart: unless-stopped
     mem_limit: 3g
     volumes: [model-data:/root/.ollama]
   reranker:
+    logging: *bounded-logs
     build:
       context: .
       dockerfile: models/reranker/Dockerfile
     restart: unless-stopped
     mem_limit: 2g
     volumes: [reranker-data:/home/model/.cache/huggingface]
+  monitor:
+    logging: *bounded-logs
+    build:
+      context: .
+      dockerfile: infra/monitor/Dockerfile
+    restart: unless-stopped
+    mem_limit: 128m
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PGOPTIONS: -c default_transaction_read_only=on
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:-answerbase}
+      PGUSER: ${POSTGRES_USER:-answerbase}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set the database password}
+      MONITOR_WEBHOOK_URL: ${MONITOR_WEBHOOK_URL:-}
+    depends_on:
+      api:
+        condition: service_healthy
   gateway:
+    logging: *bounded-logs
     image: caddy:2-alpine
     restart: unless-stopped
     ports: ['80:80', '443:443']

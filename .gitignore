@@ -26,3 +26,9 @@ supabase/.branches/
 
 !backend/coverage/
 !backend/coverage/pom.xml
+
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
