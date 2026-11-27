@@ -38,7 +38,9 @@ jobs:
           curl --location --fail --silent --show-error --retry 3 https://ollama.com/install.sh -o /tmp/install-ollama.sh
           test -s /tmp/install-ollama.sh
           sh /tmp/install-ollama.sh
+          if ! curl --fail --silent http://localhost:11434/api/tags; then nohup ollama serve > /tmp/ollama.log 2>&1 & fi
           for attempt in {1..30}; do curl --fail --silent http://localhost:11434/api/tags && break; sleep 2; done
+          curl --fail --silent http://localhost:11434/api/tags
           ollama pull nomic-embed-text:latest
           ollama pull llama3.1:8b
       - name: Use the same evaluation harness for both revisions
