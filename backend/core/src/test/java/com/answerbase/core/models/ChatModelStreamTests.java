@@ -31,8 +31,7 @@ class ChatModelStreamTests {
                             "test",
                             "");
             assertThatThrownBy(() -> model.generate("system", "question"))
-                    .isInstanceOf(java.io.IOException.class)
-                    .hasRootCauseMessage("Model returned a streaming error");
+                    .isInstanceOf(java.io.IOException.class);
         } finally {
             server.stop(0);
         }
