@@ -133,6 +133,7 @@ export function Ask({ workspace }: { workspace: Workspace }) {
         if (kind === "status") setStatus((data as { message: string }).message);
         if (kind === "failure")
           throw new Error((data as { message: string }).message);
+        if (kind === "reset") setDraft([]);
         if (kind === "claim")
           setDraft((previous) => [...previous, data as Claim]);
         if (kind === "answer") {

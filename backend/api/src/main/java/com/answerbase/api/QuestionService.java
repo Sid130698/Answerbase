@@ -84,6 +84,16 @@ class QuestionService {
  """;
 
     Result ask(UUID user, UUID workspace, Ask body, Consumer<String> stage) {
+        return ask(user, workspace, body, stage, claim -> {}, () -> {});
+    }
+
+    Result ask(
+            UUID user,
+            UUID workspace,
+            Ask body,
+            Consumer<String> stage,
+            Consumer<AnswerVerifier.Claim> claim,
+            Runnable reset) {
         var access = workspaces.get(user, workspace);
         String question = body.question() == null ? "" : body.question().strip();
         if (body.requestKey() == null
@@ -155,13 +165,47 @@ class QuestionService {
                 promptData.put("currentQuestion", mask.apply(question));
                 String prompt = JsonHttp.JSON.writeValueAsString(promptData);
                 for (int attempt = 0; attempt < 2; attempt++) {
+                    if (attempt > 0) reset.run();
+                    var partial =
+                            new VerifiedClaimStream(
+                                    source,
+                                    promptRedactor::restoreJson,
+                                    value ->
+                                            tx.executeWithoutResult(
+                                                    transaction -> {
+                                                        jdbc.queryForList(
+                                                                "SELECT id FROM answerbase.workspaces WHERE id=? FOR SHARE",
+                                                                workspace);
+                                                        workspaces.get(user, workspace);
+                                                        if (!Boolean.TRUE.equals(
+                                                                jdbc.queryForObject(
+                                                                        "SELECT EXISTS(SELECT 1 FROM answerbase.questions WHERE id=? AND execution_token=? AND status='running' AND lease_until>now())",
+                                                                        Boolean.class,
+                                                                        existing,
+                                                                        execution)))
+                                                            throw new ResponseStatusException(
+                                                                    HttpStatus.CONFLICT,
+                                                                    "This attempt expired. Retry the question.");
+                                                        for (var hit : evidence)
+                                                            if (!Boolean.TRUE.equals(
+                                                                    jdbc.queryForObject(
+                                                                            "SELECT answerbase.can_read_document(?,?)",
+                                                                            Boolean.class,
+                                                                            user,
+                                                                            hit.documentId())))
+                                                                throw new ResponseStatusException(
+                                                                        HttpStatus.FORBIDDEN,
+                                                                        "Source access changed. Ask again with current permissions.");
+                                                        claim.accept(value);
+                                                    }));
                     var generated =
                             selectedModel.generate(
                                     SYSTEM,
                                     prompt
                                             + (attempt == 1
                                                     ? "\nYour previous response failed citation validation. Use only exact passage ids and exact quotes; otherwise abstain."
-                                                    : ""));
+                                                    : ""),
+                                    partial);
                     input += generated.inputTokens();
                     output += generated.outputTokens();
                     model = generated.model();
@@ -177,6 +221,7 @@ class QuestionService {
                     }
                 }
             }
+            if (verified.abstained()) reset.run();
             if (verified.abstained() && message.isEmpty())
                 message = "I could not find this in the documents.";
             if (!verified.abstained()) message = "";
@@ -279,7 +324,9 @@ class QuestionService {
             if (e instanceof ResponseStatusException status) throw status;
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "Answer service unavailable. Your question is saved and queued for automatic retry. Check recent questions for the result.");
+                    retryable && failed == 1
+                            ? "Answer service unavailable. Your question is saved and queued for automatic retry. Check recent questions for the result."
+                            : "Answer service unavailable. Retry the question.");
         }
     }
 

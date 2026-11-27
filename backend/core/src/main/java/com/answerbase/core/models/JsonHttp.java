@@ -55,6 +55,102 @@ public final class JsonHttp {
         }
     }
 
+    /** NDJSON/SSE lines delivered as they arrive, under the same total byte/deadline limits. */
+    public void stream(
+            String url,
+            Object requestBody,
+            String secret,
+            int timeout,
+            java.util.function.Consumer<String> line)
+            throws IOException {
+        var builder =
+                HttpRequest.newBuilder(URI.create(url))
+                        .timeout(Duration.ofSeconds(timeout))
+                        .header("Content-Type", "application/json")
+                        .POST(
+                                HttpRequest.BodyPublishers.ofString(
+                                        JSON.writeValueAsString(requestBody)));
+        if (!secret.isBlank()) builder.header("Authorization", "Bearer " + secret);
+        var pending =
+                client.sendAsync(
+                        builder.build(),
+                        info -> new LineBody(info.statusCode() == 200 ? line : ignored -> {}));
+        try {
+            var response = pending.get(timeout, TimeUnit.SECONDS);
+            if (response.statusCode() != 200)
+                throw new IOException("Model service returned HTTP " + response.statusCode());
+        } catch (TimeoutException e) {
+            pending.cancel(true);
+            throw new IOException("Model response deadline exceeded", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof RuntimeException runtime) throw runtime;
+            throw new IOException("Model stream failed", e.getCause());
+        } catch (InterruptedException e) {
+            pending.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new IOException("Model stream interrupted", e);
+        }
+    }
+
+    private static final class LineBody implements HttpResponse.BodySubscriber<Void> {
+        private final java.util.function.Consumer<String> consumer;
+        private final ByteArrayOutputStream line = new ByteArrayOutputStream();
+        private final CompletableFuture<Void> body = new CompletableFuture<>();
+        private Flow.Subscription subscription;
+        private int received;
+
+        LineBody(java.util.function.Consumer<String> consumer) {
+            this.consumer = consumer;
+        }
+
+        public CompletionStage<Void> getBody() {
+            return body;
+        }
+
+        public void onSubscribe(Flow.Subscription value) {
+            subscription = value;
+            value.request(1);
+        }
+
+        private void emit() {
+            if (line.size() > 0)
+                consumer.accept(
+                        line.toString(java.nio.charset.StandardCharsets.UTF_8).stripTrailing());
+            line.reset();
+        }
+
+        public void onNext(List<ByteBuffer> buffers) {
+            if (body.isDone()) return;
+            try {
+                for (var buffer : buffers)
+                    while (buffer.hasRemaining()) {
+                        if (++received > 8 * 1024 * 1024)
+                            throw new IOException("Model response exceeds limit");
+                        byte next = buffer.get();
+                        if (next == '\n') emit();
+                        else line.write(next);
+                    }
+                subscription.request(1);
+            } catch (Exception e) {
+                subscription.cancel();
+                body.completeExceptionally(e);
+            }
+        }
+
+        public void onError(Throwable error) {
+            body.completeExceptionally(error);
+        }
+
+        public void onComplete() {
+            try {
+                emit();
+                body.complete(null);
+            } catch (Exception e) {
+                body.completeExceptionally(e);
+            }
+        }
+    }
+
     /** Bound allocation while receiving the body, not after it has been buffered. */
     private static final class LimitedBody implements HttpResponse.BodySubscriber<byte[]> {
         private final int limit;

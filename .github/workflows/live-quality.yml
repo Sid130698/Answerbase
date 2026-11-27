@@ -41,12 +41,15 @@ jobs:
           for attempt in {1..30}; do curl --fail --silent http://localhost:11434/api/tags && break; sleep 2; done
           ollama pull nomic-embed-text:latest
           ollama pull llama3.1:8b
+      - name: Use the same evaluation harness for both revisions
+        run: cp -a harness/evals/. app/evals/
       - name: Start disposable authenticated application
         working-directory: app
         run: node ../harness/scripts/ci-evaluation-bootstrap.mjs
       - name: Evaluate current application against shared candidate cases
         working-directory: app
         env:
+          JUDGE_TIMEOUT_MS: 600000
           EVAL_MODE: answers
           EVAL_VARIANT: hybrid
           EVAL_IDS: fact-01,fact-02,table-01,synthesis-01,unanswerable-01,unanswerable-02,adversarial-01,adversarial-02
