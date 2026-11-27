@@ -1,0 +1,47 @@
+[
+  {
+    "start": 0,
+    "image": "01-ask.jpg",
+    "caption": "Choose a workspace. Only permitted documents are searched."
+  },
+  {
+    "start": 10,
+    "image": "02-sources.jpg",
+    "caption": "Upload and version private documents. Processing status is visible."
+  },
+  {
+    "start": 20,
+    "image": "03-question.jpg",
+    "caption": "Ask a question about the synthetic company policies."
+  },
+  {
+    "start": 30,
+    "image": "04-streaming.jpg",
+    "caption": "Complete citation-checked claims arrive while generation continues."
+  },
+  {
+    "start": 40,
+    "image": "05-answer.jpg",
+    "caption": "The final answer cites its sources and shows their update dates."
+  },
+  {
+    "start": 50,
+    "image": "06-evidence.jpg",
+    "caption": "Open a numbered citation to inspect the highlighted quotation."
+  },
+  {
+    "start": 60,
+    "image": "07-original.jpg",
+    "caption": "Inspect document versions, extracted passages and the retained original."
+  },
+  {
+    "start": 70,
+    "image": "08-staff-login.jpg",
+    "caption": "Staff use a separate application with a dedicated employee login."
+  },
+  {
+    "start": 80,
+    "image": "09-staff-console.jpg",
+    "caption": "Support sessions require a reason and are audited. Client accounts have no staff access."
+  }
+]

@@ -129,15 +129,14 @@ class RetrievalService {
                 vector = EmbeddingModel.vector(embedding.embed(List.of(query), true).getFirst());
             }
             long embedded = System.nanoTime();
-            // MATERIALIZED guarantees permission filtering and latest indexed-version selection
-            // before ranking.
+            // Materialize only authorized version metadata before ranking. Materializing every
+            // chunk copied large text/vector rows to temporary storage at the 50k-chunk scale.
             String eligible =
                     """
     WITH eligible AS MATERIALIZED (
-      SELECT c.*,v.document_id,d.title,v.created_at FROM answerbase.document_chunks c
-      JOIN answerbase.document_versions v ON v.id=c.version_id
+      SELECT v.id,v.document_id,d.title,v.created_at FROM answerbase.document_versions v
       JOIN answerbase.documents d ON d.id=v.document_id
-      WHERE c.organization_id=? AND c.workspace_id=? AND answerbase.can_read_document(?,d.id)
+      WHERE d.organization_id=? AND d.workspace_id=? AND answerbase.can_read_document(?,d.id)
         AND v.index_status='indexed' AND v.status='processed'
         AND v.version_number=(SELECT max(v2.version_number) FROM answerbase.document_versions v2 WHERE v2.document_id=d.id AND v2.index_status='indexed' AND v2.status='processed')
     )
@@ -148,7 +147,7 @@ class RetrievalService {
                 var rows =
                         jdbc.queryForList(
                                 eligible
-                                        + " SELECT *,embedding <=> ?::vector AS distance FROM eligible WHERE embedding_model=? AND embedding IS NOT NULL ORDER BY distance,version_id,ordinal LIMIT ?",
+                                        + " SELECT c.*,eligible.document_id,eligible.title,eligible.created_at,embedding <=> ?::vector AS distance FROM answerbase.document_chunks c JOIN eligible ON c.version_id=eligible.id WHERE embedding_model=? AND embedding IS NOT NULL ORDER BY distance,version_id,ordinal LIMIT ?",
                                 access.organizationId(),
                                 workspace,
                                 user,
@@ -161,7 +160,7 @@ class RetrievalService {
                 var rows =
                         jdbc.queryForList(
                                 eligible
-                                        + " SELECT * FROM eligible WHERE search_text @@ websearch_to_tsquery('english',?) ORDER BY ts_rank_cd(search_text,websearch_to_tsquery('english',?)) DESC,version_id,ordinal LIMIT ?",
+                                        + " SELECT c.*,eligible.document_id,eligible.title,eligible.created_at FROM answerbase.document_chunks c JOIN eligible ON c.version_id=eligible.id WHERE search_text @@ websearch_to_tsquery('english',?) ORDER BY ts_rank_cd(search_text,websearch_to_tsquery('english',?)) DESC,version_id,ordinal LIMIT ?",
                                 access.organizationId(),
                                 workspace,
                                 user,

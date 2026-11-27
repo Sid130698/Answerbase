@@ -52,6 +52,8 @@ jobs:
         working-directory: app
         env:
           JUDGE_TIMEOUT_MS: 600000
+          # PRD section 9: a small live subset on every PR; manual runs evaluate all 70.
+          EVAL_IDS: ${{ github.event_name == 'pull_request' && 'fact-01,fact-05,synthesis-01,table-01,table-05,comparison-01,comparison-03,followup-01,unanswerable-01,unanswerable-05,adversarial-01,adversarial-02,adversarial-03,adversarial-04' || '' }}
           EVAL_MODE: answers
           EVAL_VARIANT: hybrid
           EVAL_REPORT: evals/reports/answers.json
