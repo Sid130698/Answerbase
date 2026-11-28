@@ -2,7 +2,8 @@
 const model = new Supabase.ai.Session('gte-small');
 Deno.serve(async (request: Request) => {
   const secret = Deno.env.get('EMBEDDING_SECRET');
-  if (!secret || request.headers.get('Authorization') !== `Bearer ${secret}`)
+  if (!secret) return new Response('Embedding configuration unavailable', { status: 503 });
+  if (request.headers.get('Authorization') !== `Bearer ${secret}`)
     return new Response('Unauthorized', { status: 401 });
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
   const body = await request.text();

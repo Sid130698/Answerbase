@@ -1,6 +1,6 @@
 # Render free deployment
 
-Selected by the owner: Render (no payment method), Supabase Free, Groq Free, Brevo Free. Provisioning is in progress; this document is not evidence of a working deployment.
+Selected by the owner: Render (no payment method), Supabase Free, Groq Free, Brevo Free. Live pilot: https://answerbase-sid.onrender.com (verified 2026-11-28). No payment method or paid service was added. Render serves application commit `37daf13`; the separately deployed Edge Function matches this repository. Auto-deploy is off; releases are manual.
 
 The Render Docker service packages the customer frontend behind Nginx and one Java API process. `EMBEDDED_WORKER=true` enables the existing durable ingestion, indexing and lifecycle processors inside that process. The separate worker remains the default for local/VM deployments. Never run a second embedded worker just to bypass platform limits or keep the service awake.
 
@@ -24,3 +24,17 @@ Use `infra/render/Dockerfile`, Free instance, port 10000, and readiness path `/a
 The free web service sleeps after inactivity. Queue processing pauses while asleep and resumes on wake; upload polling supplies normal user traffic while processing. It is a limited pilot, not always-on production. Keep reranking disabled unless a separately configured supported provider is available. Brevo phone verification and sender verification are prerequisites for testing real signup/recovery emails.
 
 Before claiming completion: test the 512 MB container, apply migrations, configure private storage and allowed auth redirects, configure Brevo SMTP in Supabase, test a real confirmed signup/sign-in, upload and index a document, ask a cited question, retrieve its original, and confirm another workspace cannot access it. Verify all four accounts remain on free plans without payment methods.
+
+
+## Hosted verification — 2026-11-28
+
+- Readiness returned HTTP 200 and all 15 Flyway migrations applied.
+- A real signup confirmation arrived in Gmail through Brevo and its confirmation link succeeded. Password login and authenticated `/api/v1/me` returned 200. Browser login opened the correct organization/workspace.
+- Created an organization and workspace; uploaded a 216-byte Markdown policy. Supabase private storage retained the original, and the embedded worker extracted and indexed both sections using hosted gte-small.
+- Groq `openai/gpt-oss-20b` returned the expected 30-day refund answer with an exact source citation. The browser rendered the answer, citation highlight, source passages and indexed status. An unsupported question abstained.
+- Original-file API returned 200 with the expected contents. Anonymous original access returned 401; a different workspace path returned 404. Unauthenticated embedding requests returned 401.
+- These are pilot smoke checks, not a complete load test or corpus quality evaluation. UI download automation timed out; original retrieval was independently verified through the public API.
+
+The runtime initially did not receive the Edge Function secret despite its dashboard row. Saving the same value again resolved it; verify a real authorized embedding call after provisioning. Missing runtime configuration now returns 503 rather than misreporting invalid credentials.
+
+Brevo rewrites the verified Gmail sender to its authenticated `brevosend.com` domain. A custom sender domain is not configured. The private document adapter currently uses the legacy service-role key; migrate it to the created modern secret key before Supabase retires legacy keys. No secrets belong in this document or Git. Support frontend is not deployed with the customer site.
