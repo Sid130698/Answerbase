@@ -21,6 +21,7 @@ COPY --from=backend /build/api/target/answerbase-api-0.1.0-SNAPSHOT.jar /app/app
 COPY --from=frontend /build/dist /app/web
 COPY infra/render/nginx.conf /app/nginx.conf
 COPY infra/render/start.sh /app/start.sh
+COPY infra/render/supabase-ca.crt /app/supabase-ca.crt
 RUN chmod +x /app/start.sh
 USER answerbase
 ENV JAVA_TOOL_OPTIONS="-Xmx256m -Xss256k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"

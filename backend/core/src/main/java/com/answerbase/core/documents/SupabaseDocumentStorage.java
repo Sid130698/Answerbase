@@ -27,19 +27,18 @@ public final class SupabaseDocumentStorage implements DocumentStorage {
 
     private byte[] requestEndpoint(String method, String path, byte[] data, String type)
             throws IOException {
-        var request =
+        var builder =
                 HttpRequest.newBuilder(URI.create(base + "/storage/v1/" + path))
                         .timeout(Duration.ofSeconds(30))
                         .header("apikey", secret)
-                        .header("Authorization", "Bearer " + secret)
                         .header("Content-Type", type)
                         .method(
                                 method,
                                 data == null
                                         ? HttpRequest.BodyPublishers.noBody()
-                                        : HttpRequest.BodyPublishers.ofByteArray(data))
-                        .build();
-        var response = http.exchange(request, 30, MAX_BYTES);
+                                        : HttpRequest.BodyPublishers.ofByteArray(data));
+        if (!secret.startsWith("sb_secret_")) builder.header("Authorization", "Bearer " + secret);
+        var response = http.exchange(builder.build(), 30, MAX_BYTES);
         if (method.equals("DELETE") && response.statusCode() == 404) return new byte[0];
         if (response.statusCode() < 200 || response.statusCode() >= 300)
             throw new IOException("Private storage request failed: HTTP " + response.statusCode());
