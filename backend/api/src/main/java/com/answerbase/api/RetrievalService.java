@@ -65,11 +65,14 @@ class RetrievalService {
             @Value("${RETRIEVAL_MODE:hybrid}") String mode,
             @Value("${RETRIEVAL_CANDIDATES:30}") int candidates,
             @Value("${RETRIEVAL_TOP_K:6}") int topK,
-            @Value("${RETRIEVAL_RERANK:false}") boolean rerank) {
+            @Value("${RETRIEVAL_RERANK:false}") boolean rerank,
+            @Value("${EMBEDDING_PROVIDER:ollama}") String provider,
+            @Value("${EMBEDDING_ENDPOINT:}") String endpoint,
+            @Value("${EMBEDDING_SECRET:}") String secret) {
         this(
                 jdbc,
                 workspaces,
-                new OllamaEmbedding(url, model),
+                EmbeddingModels.create(provider, url, model, endpoint, secret),
                 new HttpReranker(rerankUrl),
                 new Options(mode, candidates, topK, rerank));
     }

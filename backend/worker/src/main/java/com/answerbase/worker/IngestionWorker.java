@@ -24,13 +24,20 @@ class IngestionWorker {
                     String modelUrl,
             @org.springframework.beans.factory.annotation.Value(
                             "${EMBEDDING_MODEL:nomic-embed-text:latest}")
-                    String modelName) {
+                    String modelName,
+            @org.springframework.beans.factory.annotation.Value("${EMBEDDING_PROVIDER:ollama}")
+                    String provider,
+            @org.springframework.beans.factory.annotation.Value("${EMBEDDING_ENDPOINT:}")
+                    String endpoint,
+            @org.springframework.beans.factory.annotation.Value("${EMBEDDING_SECRET:}")
+                    String secret) {
         processor = new IngestionProcessor(jdbc, new TransactionTemplate(manager), storage);
         indexer =
                 new IndexProcessor(
                         jdbc,
                         new TransactionTemplate(manager),
-                        new com.answerbase.core.models.OllamaEmbedding(modelUrl, modelName));
+                        com.answerbase.core.models.EmbeddingModels.create(
+                                provider, modelUrl, modelName, endpoint, secret));
     }
 
     @Scheduled(fixedDelayString = "${documents.index-poll-ms:3000}")

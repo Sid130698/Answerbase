@@ -32,3 +32,5 @@ supabase/.branches/
 *.tfstate.*
 *.tfvars
 *.tfplan
+
+.env.render-secrets
